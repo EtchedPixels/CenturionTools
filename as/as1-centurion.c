@@ -93,7 +93,7 @@ void getaddr(ADDR *ap)
  *	offset(regpair+)
  */
 
-void address_encoding(uint8_t opbase, unsigned type, unsigned store)
+void address_encoding(uint8_t opbase, unsigned type, unsigned store, unsigned size)
 {
 	int c = getnb();
 	unsigned indir = 0, predec = 0, postinc = 0, offset = 0;
@@ -123,7 +123,10 @@ void address_encoding(uint8_t opbase, unsigned type, unsigned store)
 				outab(opbase | 1);
 			else
 				outab(opbase);
-			outraw(&a1);
+			if (size == 1)
+				outrab(&a1);
+			else
+				outraw(&a1);
 			return;
 		}
 		istuser(&a1);
@@ -580,7 +583,7 @@ loop:
 		break;		
 	case TJUMP:
 		/* Sort of like load/store but apparently not quite */
-		address_encoding(opcode, 2, 0);
+		address_encoding(opcode, 2, 0, 2);
 		break;
 	case TSTORE:
 	case TLOAD:
@@ -597,18 +600,18 @@ loop:
 		switch(a1.a_type & TMMODE) {
 		case TBR:
 			if (r1 == RAL)
-				address_encoding(encoding, 0, store);
+				address_encoding(encoding, 0, store, 1);
 			else if (r1 == RBL)
-				address_encoding(encoding | 0x40, 0, store);
+				address_encoding(encoding | 0x40, 0, store, 1);
 			else
 				aerr(REGABBYTE);
 			break;	
 		case TWR:
 			encoding |= 0x10;
 			if (r1 == RA)
-				address_encoding(encoding, 0, store);
+				address_encoding(encoding, 0, store, 2);
 			else if (r1 == RB)
-				address_encoding(encoding | 0x40, 0, store);
+				address_encoding(encoding | 0x40, 0, store, 2);
 			else if (r1 == RX) {
 				/* X is a bit different. Own range and no
 				   shorter for register index */
@@ -616,7 +619,7 @@ loop:
 					encoding = 0x68;
 				else
 					encoding = 0x60;
-				address_encoding(encoding, 1, store);
+				address_encoding(encoding, 1, store, 2);
 			}
 			else
 				aerr(REGABXWORD);

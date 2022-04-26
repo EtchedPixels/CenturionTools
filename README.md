@@ -1,4 +1,20 @@
-Warrex Centurion CPU6
+# Centurion Tools
+
+An assembler, linker and related tools for the Warrex Centurion CPU-6.
+
+## Basic usage
+
+````
+as [-l listfile] [-o objfile] foo.s
+
+ld -b -C addr foo.o -o foo
+````
+
+The Warrex elements of the tool chain are new and lightly tested. The core of
+the tool chain is well established and used for many other targets including
+the TMS9995 and 6800 C compiler kits.
+
+## Status
 
 This is an initial cut at an assembler for what we know of the Warrex
 Centurion CPU6 processor. The register naming is believed to be right
@@ -38,25 +54,11 @@ set.
 
 Not yet handled
 * MMU ops
+* All of the cases we want self extending and backwards jumps
+* BRA label  (aka JUMP PC+n but self extending)
 
 Instruction size is determined by the register references. There are no
 memory to memory instructions so the size is always explicit.
-
-# Centurion Tools
-
-An assembler, linker and related tools for the Warrex Centurion CPU-6.
-
-## Basic usage
-
-````
-as [-l listfile] [-o objfile] foo.s
-
-ld -b -C addr foo.o -o foo
-````
-
-The Warrex elements of the tool chain are new and lightly tested. The core of
-the tool chain is well established and used for many other targets including
-the TMS9995 and 6800 C compiler kits.
 
 ## Credits
 

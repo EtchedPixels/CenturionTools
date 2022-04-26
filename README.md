@@ -39,7 +39,7 @@ set.
 Not yet handled
 * MMU ops
 
-Instruction size is determined by the register references. There are now
+Instruction size is determined by the register references. There are no
 memory to memory instructions so the size is always explicit.
 
 # Centurion Tools

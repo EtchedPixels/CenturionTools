@@ -1,0 +1,39 @@
+Register usage
+
+A	main accumulator
+B	scratch for compares etc
+
+YA	Return for 32bit values, Y is the top half
+A	Return for 16bit or 8bit values
+
+X	Stack linkage, working register (not saved)
+Y	Free
+Z	Frame pointer
+
+Types
+
+char	8bit default unsigned, lower register half
+
+int	16bit. Occupies one register
+
+pointer	16bit. Occupies one register
+
+long:	32bit. Occupies a pair of registers
+
+float:	32bit. Occupies a pair of registers.
+
+All objects in memory are big endian.
+
+Call Interface
+
+Stack based
+
+Stack
+
+Downwards off S (defined by hardware)
+
+Alignment
+
+Byte
+
+

@@ -1,0 +1,13 @@
+Integer:
+
+COLORMAP needs to allow for two reg overlaps on 32bit
+Debug shifts that are not by 1 - regalloc is looping
+Test the various intstruction compares and helpers
+
+Long:
+
+Table filled in not much else started
+
+Float:
+
+Not touched

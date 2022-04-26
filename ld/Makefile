@@ -25,4 +25,4 @@ clean:
 
 install:
 	mkdir -p /opt/aswrx6/bin
-	cp nmwrx6 osizewrx6 dumprelocswrx6 /opt/aswrx6/bin/
+	cp ldwrx6 nmwrx6 osizewrx6 dumprelocswrx6 /opt/aswrx6/bin/

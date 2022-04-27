@@ -334,6 +334,16 @@ struct rspecial *nspecial(struct optab *q)
 				return store32;
 			}
 			break;
+		case FUNARG:
+			if (q->lshape & SAREG) {
+				if (q->ltype & TCHAR)
+					return load8;
+				else
+					return load16;
+			}
+			if (q->lshape & SBREG)
+				return load32;
+			break;
 		case OPLOG:
 			if (q->lshape & INAREG)
 				return oplogc16;

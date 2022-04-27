@@ -166,16 +166,16 @@ prologue(struct interpass_prolog *ipp)
 	printf("%s:\n", ipp->ipp_name);
 #endif
 	printf("st	x,(-s)\n");
-	printf("mov	z,s\n");
+	printf("xfr	z,s\n");
 
 	addto = p2maxautooff + 2;
 	switch(addto) {
 		case 3:
-			printf("dec	s\n");
+			printf("dcr	s\n");
 		case 2:
-			printf("dec	s\n");
+			printf("dcr	s\n");
 		case 1:
-			printf("dec	s\n");
+			printf("dcr	s\n");
 		case 0:
 			break;
 		default:
@@ -196,9 +196,9 @@ eoftn(struct interpass_prolog *ipp)
 	if (ipp->ipp_ip.ip_lbl == 0)
 		return; /* no code needs to be generated */
 
-	printf("mov	s,z\n");
+	printf("xfr	s,z\n");
 	printf("ld	x,(s+)\n");
-	printf("ret\n");
+	printf("rsr\n");
 }
 
 /*
@@ -222,10 +222,10 @@ hopcode(int f, int o)
 		str = "and";
 		break;
 	case OR:
-		str = "or";
+		str = "ori";
 		break;
 	case ER:
-		str = "xor";
+		str = "ore";
 		break;
 	default:
 		comperr("hopcode2: %d", o);
@@ -370,9 +370,9 @@ static void fpmove_r(int s, int d)
 	else {
 		s &= 0x0F;
 		d &= 0x0F;
-		printf("mov	@fr%d%s, @fr%d%s\n",
+		printf("xfr	@fr%d%s, @fr%d%s\n",
 			s, or, d, or);
-		printf("mov	@fr%d+2%s, @fr%d+2%s\n",
+		printf("xfr	@fr%d+2%s, @fr%d+2%s\n",
 			s, or, d, or);
 	}
 }
@@ -401,7 +401,7 @@ static void fpmove(NODE *p)
 		expand(p, 0, "lr	AR\n");
 		return;
 	}
-	expand(p, 0, "mov	ZR,ZL\nmov	UR,UL; fpmove AR,AL\n");
+	expand(p, 0, "xfr	ZR,ZL\nxfr	UR,UL; fpmove AR,AL\n");
 }
 
 /* R into P  where P is always going to be register allocated */
@@ -427,7 +427,7 @@ static void ofpmove(NODE *p)
 		return;
 	}
 	/* Two memory objects */
-	expand(p, 0, "mov	ZR,Z1\nmov	UR,U1; ofpmove AR,A1\n");
+	expand(p, 0, "xfr	ZR,Z1\nxfr	UR,U1; ofpmove AR,A1\n");
 }
 
 /* rmove is used directly for temporary register moves in the compiler as
@@ -441,16 +441,16 @@ rmove(int s, int d, TWORD t)
 	}
 	printf(";rmove %d %d\n", s, d);
 	if (t < LONG || t > BTMASK) {
-		printf("mov	%s,%s\n",
+		printf("xfr	%s,%s\n",
 			regname(d), regname(s));
 	} else if (t == LONG || t == ULONG || t == FLOAT || t == DOUBLE) {
 		/* avoid trashing double regs */
 		if (d > s)
-			printf("mov	%s,%s\nmov	%s,%s\n",
+			printf("xfr	%s,%s\nxfr	%s,%s\n",
 			regname_l(d), regname_l(s),
 			regname_h(d), regname_h(s));
 		else
-			printf("mov	%s,%s\nmov	%s,%s\n",
+			printf("xfr	%s,%s\nxfr	%s,%s\n",
 			regname_h(d), regname_h(s),
 			regname_l(d), regname_l(s));
 	} else
@@ -484,7 +484,7 @@ static void load32(NODE *p)
 
 
 /* 32bit load from l (const) into 1 (reg). Minimize the number of 4 byte
-   li operations in favour of two byte clr or mov */
+   li operations in favour of two byte clr or xfr */
 
 static void opload32(NODE *p)
 {
@@ -507,7 +507,7 @@ static void opload32(NODE *p)
 	if (rhigh == 0)
 		printf("clr	%s\n", regname_h(l));
 	else if (rlow == rhigh)
-		printf("mov	%s, %s\n", regname_l(l), regname_h(l));
+		printf("xfr	%s, %s\n", regname_l(l), regname_h(l));
 	else
 		printf("ld	%s, %d\n", regname_h(l), rhigh);
 }
@@ -536,11 +536,11 @@ void zzzcode(NODE *p, int c)
 		case 0:
 			break;
 		case 3:
-			printf("inc	s\n");
+			printf("inr	s\n");
 		case 2:
-			printf("inc	s\n");
+			printf("inr	s\n");
 		case 1:
-			printf("inc	s\n");
+			printf("inr	s\n");
 			break;
 		default:
 			/* Umm so we can't use B:A for 32bit return or we
@@ -579,11 +579,11 @@ void zzzcode(NODE *p, int c)
 			int r = l->n_rval;
 			if (R2TEST(r)) {
 				l->n_rval = R2UPK1(r);
-				expand(p, FOREFF, "mov	AL,r1\n");
+				expand(p, FOREFF, "xfr	AL,r1\n");
 				l->n_rval = r;
 			} else {
 				if (r != 1)
-					printf("mov	%s,r1\n", regname(r));
+					printf("xfr	%s,r1\n", regname(r));
 				if (getlval(l))
 					printf("ai	r1, %d\n", (int)getlval(l));
 			}
@@ -592,8 +592,8 @@ void zzzcode(NODE *p, int c)
 		o = getlab2();
 		printf("li	r0, %d\n", (len + 1) >> 1);
 		deflab(o);
-		printf("mov	*r2+, *r1+\n");
-		printf("dec	r0\njne	" LABFMT "\n", o);
+		printf("xfr	*r2+, *r1+\n");
+		printf("dcr	r0\njne	" LABFMT "\n", o);
 		break;
 	/* TODO : unroll for smaller structs */
 	case 'J': /* struct argument */
@@ -601,14 +601,14 @@ void zzzcode(NODE *p, int c)
 		ap = attr_find(p->n_ap, ATTR_P2STRUCT);
 		o = (ap->iarg(0) + 1) & ~1;
 		if (o == 2)
-			printf("dect	r13");
+			printf("dcrt	r13");
 		else
 			printf("ai	r13, %d", -o);
-		printf("mov	r13,r2\n");
+		printf("xfr	r13,r2\n");
 		printf("li	r0, %d\n", o >> 1);
 		deflab(o);
-		printf("mov	*r1+, *r2+\n");
-		printf("dec	r0");
+		printf("xfr	*r1+, *r2+\n");
+		printf("dcr	r0");
 		printf("jne	" LABFMT "\n", o);
 		spcoff += argsiz(p);
 		break;
@@ -626,10 +626,10 @@ void zzzcode(NODE *p, int c)
 			break;
 			/* Hard ones. Need to juggle a register in each case */
 		case R_YX:
-			expand(p, 0, "st	ZR,ZL\nst	x,(-s)\nmov	x,UR\nst	x,UL\nld	x,(-s)\n");
+			expand(p, 0, "st	ZR,ZL\nst	x,(-s)\nxfr	x,UR\nst	x,UL\nld	x,(-s)\n");
 			break;
 		case R_YA:
-			expand(p, 0, "st	ZR,ZL\nst	a,(-s)\nmov	a,UR\nst	a,UL\nld	a,(-s)\n");
+			expand(p, 0, "st	ZR,ZL\nst	a,(-s)\nxfr	a,UR\nst	a,UL\nld	a,(-s)\n");
 			break;
 		}
 		break;
@@ -658,7 +658,7 @@ void zzzcode(NODE *p, int c)
 			/* Hard ones. Need to juggle a register in each case */
 		case R_YX:
 		case R_YA:
-			expand(p, 0, "ld	ZL,UR\nmov	UL,ZL\nld	ZL,ZR\n");
+			expand(p, 0, "ld	ZL,UR\nxfr	UL,ZL\nld	ZL,ZR\n");
 			break;
 		}
 		break;
@@ -669,6 +669,30 @@ void zzzcode(NODE *p, int c)
 	/* R see above */
 	case 'S': /* Adust sp for argument push */
 		spcoff += argsiz(p);
+		break;
+	case 'T': /* Store a register, any register, word */
+		switch(p->n_right->n_reg) {
+		case R_A:
+		case R_B:
+		case R_X:
+			expand(p, 0, "st	AR,AL\n");
+			break;
+		case R_Y:
+			expand(p, 0, "st	a,(-s)\nxfr	a,y\nst	a,AL\nld	a,(s+)\n");
+			break;
+		}
+		break;
+	case 'U': /* Store a register, any register, byte */
+		switch(p->n_right->n_reg) {
+		case R_A:
+		case R_B:
+		case R_X:
+			expand(p, 0, "st	AR,AL\n");
+			break;
+		case R_Y:
+			expand(p, 0, "st	al,(-s)\nxfr	al,yl\nst	al,AL\nld	al,(s+)\n");
+			break;
+		}
 		break;
 	case 'Z': /* Force debug */
 		fwalk(p, e2print, 0);

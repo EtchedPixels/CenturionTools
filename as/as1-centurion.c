@@ -78,7 +78,6 @@ void getaddr(ADDR *ap)
 	expr1(ap, LOPRI, 0);
 }
 
-
 /*
  *	Encode a full address description
  *
@@ -223,6 +222,10 @@ void address_encoding(uint8_t opbase, unsigned type, unsigned store, unsigned si
 	}			
 }
 
+static SYM branch_bl = {
+	0,	"bl",		TREL8,		0x10
+};
+
 /*
  * Assemble one line.
  * The line in in "ib", the "ip"
@@ -322,6 +325,10 @@ loop:
 		goto loop;
 	}
 	unget(c);
+	/* Fix up "bl" being ambiguous */
+	if ((sp->s_type & TMMODE) == TBR && sp->s_value == RBL)
+		sp = &branch_bl;
+
 	opcode = sp->s_value;
 	switch (sp->s_type&TMMODE) {
 	case TORG:

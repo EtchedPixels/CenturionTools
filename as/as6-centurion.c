@@ -11,8 +11,8 @@ SYM	sym[] = {
 	{	0,	"y",		TWR,		RY	},
 	{	0,	"z",		TWR,		RZ	},
 	{	0,	"s",		TWR,		RS	},
-	{	0,	"c",		TWR,		RG	},
-	{	0,	"p",		TWR,		RH	},
+	{	0,	"c",		TWR,		RC	},
+	{	0,	"p",		TWR,		RP	},
 
 	{	0,	"al",		TBR,		RAL	},
 	{	0,	"ah",		TBR,		RAH	},
@@ -24,10 +24,10 @@ SYM	sym[] = {
 	{	0,	"yh",		TBR,		RYH	},
 	{	0,	"zl",		TBR,		RZL	},
 	{	0,	"zh",		TBR,		RZH	},
-	{	0,	"gl",		TBR,		RGL	},
-	{	0,	"gh",		TBR,		RGH	},
-	{	0,	"hl",		TBR,		RHL	},
-	{	0,	"hh",		TBR,		RHH	},
+	{	0,	"cl",		TBR,		RCL	},
+	{	0,	"ch",		TBR,		RCH	},
+	{	0,	"pl",		TBR,		RPL	},
+	{	0,	"ph",		TBR,		RPH	},
 
 	/* P is not PC... there are differences */
 	{	0,	"pc",		TSR,		RPC	},
@@ -78,7 +78,10 @@ SYM	sym[] = {
 	{	0,	"sysret",	TIMPL,		0x0F	},
 
 	/* 0x1X		:	Branches */
+#if 0
+	/* Clashes with the bl register so handle in code */
 	{	0,	"bl",		TREL8,		0x10	},
+#endif
 	{	0,	"bnl",		TREL8,		0x11	},
 	{	0,	"bf",		TREL8,		0x12	},
 	{	0,	"bnf",		TREL8,		0x13	},

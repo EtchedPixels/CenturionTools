@@ -1166,8 +1166,8 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define	RY	6
 #define RZ	8
 #define RS	10
-#define RG	12
-#define	RH	14
+#define RC	12
+#define	RP	14
 
 #define RAH	0
 #define RAL	1
@@ -1181,10 +1181,10 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define RZL	9
 #define RSH	10
 #define RSL	11
-#define RGH	12
-#define RGL	13
-#define RHH	14
-#define RHL	15
+#define RCH	12
+#define RCL	13
+#define RPH	14
+#define RPL	15
 
 #define RPC	0
 

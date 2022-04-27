@@ -132,5 +132,6 @@ libc.a:	ccwrx6 $(STDIO) $(OBJ)
 clean:
 	(cd as; make clean)
 	(cd ld; make clean)
+	(cd pcc-centurion; make clean)
 	rm -f $(OBJ) $(STDIO)
 	rm *~

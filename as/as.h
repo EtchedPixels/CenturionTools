@@ -1145,6 +1145,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define TJUMP	0x1B00			/* Jump/call */
 #define TLOAD	0x1C00			/* Load */
 #define TSTORE	0x1D00			/* Store */
+#define TJUMP8	0x1E00			/* Extending 8bit branch */
 
 /*
  * Registers.

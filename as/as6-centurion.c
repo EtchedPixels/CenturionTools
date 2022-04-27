@@ -105,6 +105,7 @@ SYM	sym[] = {
 	{	0,	"js2",		TBRA16,		0x1B	},
 	{	0,	"js3",		TBRA16,		0x1C	},
 	{	0,	"js4",		TBRA16,		0x1D	},
+	{	0,	"bra",		TJUMP8,		0x73	},
 	
 
 	/* 0x2X		:	Mix of ALU and misc */

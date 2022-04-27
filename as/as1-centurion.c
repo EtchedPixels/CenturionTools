@@ -677,7 +677,38 @@ loop:
 		if (c) {
 			outab(opcode^1);	/* Inverted branch */
 			outab(3);		/* Skip over the jump */
-			outab(0x7E);		/* Jump */
+			outab(0x71);		/* Jump */
+			outraw(&a1);
+		} else {
+			outab(opcode);
+			/* Should never happen */
+			if (disp < -128 || disp > 127)
+				aerr(BRA_RANGE);
+			outab(disp);
+		}
+		break;
+	case TJUMP8:
+		/* Same but not conditional */
+		getaddr(&a1);
+		/* disp may change between pass1 and pass2 but we know it won't
+		   get bigger so we can be sure that we still fit the 8bit disp
+		   in pass 2 if we did in pass 1 */
+		disp = a1.a_value - dot[segment] - 2;
+		/* For pass 0 assume the worst case. Then we optimize on
+		   pass 1 when we know what may be possible */
+		if (pass == 3)
+			c = getnextrel();
+		else {
+			c = 0;
+			/* Cases we know it goes big */
+			if (pass == 0 || disp < -128 || disp > 127 || a1.a_segment != segment)
+				c = 1;
+			/* On pass 2 we lock down our choices in the table */
+			if (pass == 2)
+				setnextrel(c);
+		}
+		if (c) {
+			outab(0x71);		/* Jump */
 			outraw(&a1);
 		} else {
 			outab(opcode);

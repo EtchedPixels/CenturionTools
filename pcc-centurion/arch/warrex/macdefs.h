@@ -157,7 +157,8 @@ typedef long long OFFSZ;
 #define	R_YA	0x08	/* Register longs or many pairs due to all the helpers */
 #define	R_BA	0x09	/* Pairs. We don't seem to gain much from */
 #define	R_XB	0x0A	/* Register longs or many pairs due to all the helpers */
-#define	R_XY	0x0B
+#define	R_YX	0x0B
+#define R_XA	0x0C
 
 #define	FR0	0x10	/* Results accumulate here */
 #define FR1	0x11	/* Fake FP register to keep code generator sane */
@@ -173,27 +174,27 @@ typedef long long OFFSZ;
 #define	RSTATUS	\
 	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG,\
 	0, /* Frame pointer */ 0, /* Stack */ 0, 0,\
-	SBREG, SBREG, SBREG, 0, 0, 0, 0, 0, \
+	SBREG, SBREG, SBREG, SBREG, SBREG, 0, 0, 0, \
 	SCREG|TEMPREG, SCREG|TEMPREG, SCREG|TEMPREG, 0, 0, 0, 0, 0,\
 	SDREG, SDREG, SDREG, SDREG,
 
 #define	ROVERLAP \
 	/* 8 basic registers */			\
-	{ /* RA: */ R_BA, R_YA, -1 },	\
+	{ /* RA: */ R_BA, R_XA, R_YA, -1 },	\
 	{ /* RB: */ R_BA, R_XB, -1 },		\
-	{ /* RX: */ R_XB, R_XY, -1 },		\
-	{ /* RY: */ R_YA, R_XY, -1 },		\
+	{ /* RX: */ R_XA, R_XB, R_YX, -1 },		\
+	{ /* RY: */ R_YA, R_YX, -1 },		\
 	{ /* RZ: */ -1 },			\
 	{ /* RS: */ -1 },			\
 	{ /* RF: */ -1 },			\
 	{ /* RP: */ -1 },			\
 \
-	/* 4 long registers made using pairs */		\
-	{ /* RYA: */ R_Y, R_A, R_BA, R_XY, -1 },		\
-	{ /* RBA */ R_A, R_B, R_YA, -1 },		\
-	{ /* RXB: */ R_X, R_B, R_BA, R_XB, -1 },	\
-	{ /* RXY: */ R_X, R_Y, R_XB, R_YA, -1 },	\
-	{ -1 },						\
+	/* 5 long registers made using pairs */		\
+	{ /* RYA: */ R_Y, R_A, R_BA, R_XA, R_YX, -1 },	\
+	{ /* RBA */  R_A, R_B, R_XA, R_XB, R_YA, -1 },		\
+	{ /* RXB: */ R_X, R_B, R_BA, R_XA, R_YX, -1 },	\
+	{ /* RXY: */ R_X, R_Y, R_XA, R_XB, R_YA, -1 },	\
+	{ /* RXA: */ R_A, R_X, R_XB, R_YA, R_YX, -1 },	\
 	{ -1 },						\
 	{ -1 },						\
 	{ -1 },						\

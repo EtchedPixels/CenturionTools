@@ -39,21 +39,24 @@ static const char *rpname[]  = {
 	"ya",
 	"ba",
 	"xb",
-	"yx"
+	"yx",
+	"xa"
 };
 
 static const char *rlname[]  = {
 	"a",
 	"a",
 	"b",
-	"y",
+	"x",
+	"a",
 };
 
 static const char *rhname[]  = {
 	"y",
 	"b",
 	"x",
-	"x",
+	"y",
+	"x"
 };
 
 static const char *rname[] = {
@@ -609,6 +612,27 @@ void zzzcode(NODE *p, int c)
 		printf("jne	" LABFMT "\n", o);
 		spcoff += argsiz(p);
 		break;
+	case 'K': /* 32bit stores. We can't just force registers as we don't
+		     quite have enough space for the register allocator to fix
+		     the resulting juggling game. Instead do stuff for the
+		     hard cases */
+		printf(";ZK %d\n", p->n_right->n_reg);
+		switch(p->n_right->n_reg) {
+		case R_BA:
+		case R_XA:
+		case R_XB:
+			/* Easy cases */
+			expand(p, 0, "st	ZR,ZL\nst	UR,UL\n");
+			break;
+			/* Hard ones. Need to juggle a register in each case */
+		case R_YX:
+			expand(p, 0, "st	ZR,ZL\nst	x,(-s)\nmov	x,UR\nst	x,UL\nld	x,(-s)\n");
+			break;
+		case R_YA:
+			expand(p, 0, "st	ZR,ZL\nst	a,(-s)\nmov	a,UR\nst	a,UL\nld	a,(-s)\n");
+			break;
+		}
+		break;
 	/* L see above */
 	case 'M': /* Load of an fp reg via OPLTYPE */
 		ofpmove(p);
@@ -620,6 +644,23 @@ void zzzcode(NODE *p, int c)
 	case 'O':
 		/* Load 32bit immediate with architectural shortcuts */
 		opload32(p);
+		break;
+	case 'P':
+		/* Load 32bit whilst handling problems with Y */
+		printf(";ZP %d\n", p->n_left->n_reg);
+		switch(p->n_left->n_reg) {
+		case R_BA:
+		case R_XA:
+		case R_XB:
+			/* Easy cases */
+			expand(p, 0, "ld	ZL,ZR\nld	UL,UR\n");
+			break;
+			/* Hard ones. Need to juggle a register in each case */
+		case R_YX:
+		case R_YA:
+			expand(p, 0, "ld	ZL,UR\nmov	UL,ZL\nld	ZL,ZR\n");
+			break;
+		}
 		break;
 	case 'Q':
 		/* Upper word right as constant */
@@ -859,11 +900,13 @@ ccbranches[] = {
 	"jlt",		/* jumpl */
 	"jge",		/* jumpge */
 	"jgt",		/* jumpg */
-	/* TODO - need carry/zero pairs ? */
-	"jle"	,	/* jumple (jlequ) */
-	"jc",		/* jumpl (jlssu) */
-	"jnc",		/* jumpge (jgequ) */
-	"jh",		/* jumpg (jgtru) */
+	/* Unsigned we have carry and zero flags, and need to remember
+	   the logic for the test is actually backwards as the branch
+	   matches B = thing to compare SUB B,A */
+	"jnc"	,	/* jumple (jlequ) */
+	"nzjnc",	/* jumpl (jlssu) */
+	"zjc",		/* jumpge (jgequ) */
+	"jc",		/* jumpg (jgtru) */
 };
 
 
@@ -871,9 +914,19 @@ ccbranches[] = {
 void
 cbgen(int o, int lab)
 {
+	const char *p;
 	if (o < EQ || o > UGT)
 		comperr("bad conditional branch: %s", opst[o]);
-	printf("%s	" LABFMT "\n", ccbranches[o-EQ], lab);
+	p = ccbranches[o - EQ];
+	if (*p != 'j') {
+		putchar('j');
+		while(*p && *p != 'j') {
+			putchar(*p);
+			p++;
+		}
+		printf("\t" LABFMT "\n", lab);
+	}
+	printf("%s	" LABFMT "\n", p, lab);
 }
 
 #define	IS1CON(p) ((p)->n_op == ICON && getlval(p) == 1)
@@ -1005,14 +1058,14 @@ COLORMAP(int c, int *r)
 		/* Class C can cost us two class A max */
 		if (cc)
 			ca += 2;
-		return  ca <= 4;	/* We have 10 class A */
+		return  ca <= 4;	/* We have 4 class A */
 	case CLASSB:
 		/* Each class A can take out two class B (high and low) */
 		cb += 2 * ca;
 		/* Class C can take out another 1 (we have no R15,0) */
 		if (cc)
 			cb ++;
-		return cb <= 3;	/* We have 3 but they overlap */
+		return cb < 3;	/* We have more but they overlap */
 	case CLASSC:
 		/* We can lose one class C register if any A or B are
 		   allocated */
@@ -1025,7 +1078,7 @@ COLORMAP(int c, int *r)
 
 char *rnames[] = {
 	"a", "b", "x", "y", "z", "s", "f", "p",
-	"ya", "ba", "xb", "yx", "", "", "", "", "",
+	"ya", "ba", "xb", "yx", "xa", "", "", "", "",
 	"f0", "f1", "f2", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
 };
  

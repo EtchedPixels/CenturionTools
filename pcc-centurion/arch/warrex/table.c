@@ -68,7 +68,7 @@ struct optab table[] = {
 { PCONV,	INAREG,
 	SOREG|SNAME,		TLONG|TULONG,
 	SAREG,			TPOINT,
-		NAREG|NASL,	RESC1,
+		NSPECIAL|NAREG|NASL,	RESC1,
 		"ld	A1,ZL", },
 
 /* char to pointer - no op */
@@ -104,7 +104,7 @@ struct optab table[] = {
 	SAREG,	TCHAR,
 	SAREG,	TWORD,
 		0,	RLEFT,
-		"clr	ALh\nADD	ALl,ALh\nZBbnc	ZEdec	ALh\nZE\n", },
+		"clr	ALh\nadd	ALl,ALh\nZBbnc	ZE\ndec	ALh\nZD\n", },
 
 /* Char or unsigned char to int or uint: constant */
 { SCONV,	INAREG,
@@ -125,7 +125,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SOREG|SNAME,	TUCHAR,
 	SAREG,	TINT|TUNSIGNED,
-		NSPECIAL|NAREG,	RLEFT,
+		NSPECIAL|NAREG,	RESC1,
 		"clr	A1h\nld	A1l,AL\n", },
 
 /* char to ulong: register */
@@ -191,7 +191,7 @@ struct optab table[] = {
 	SAREG,	TINT|TPOINT,
 	SANY,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	AL,Z1\nclr	U1\nadd	AL,U1\nZBbnc	ZE\ndec	U1\nZD", },
+		"mov	AL,Z1\nclr	U1\nadd	AL,U1\nZBbnc	ZE\ndec	U1\nZD\n", },
 
 /* int to float: helper */
 { SCONV,	INCREG,
@@ -465,7 +465,7 @@ struct optab table[] = {
 	SBREG,		TLONG|TULONG,
 	SBREG,		TLONG|TULONG,
 		0,	RLEFT,
-		"ZBadd	UL,UR\nadd	ZL,ZR\njnc	ZE\ninc	UL\nZD", },
+		"ZBadd	UL,UR\nadd	ZL,ZR\njnc	ZE\ninc	UL\nZD\n", },
 
 /* Integer to pointer addition */
 { PLUS,		INAREG,
@@ -681,14 +681,19 @@ struct optab table[] = {
 { ASSIGN,	FOREFF|INBREG,
 	SBREG,			TLONG|TULONG,
 	SNAME|SOREG,		TLONG|TULONG,
-		NSPECIAL,	RDEST,
-		"ld	ZL,ZR\nld	UL,UR\n", },
+		0,	RDEST,
+		"ZP", },
 
+/*
+ *	We run into lack of register problems here. Needs more looking
+ *	into. For now push it down into our specials to cope with the y
+ *	cases.
+ */
 { ASSIGN,	FOREFF|INBREG,
 	SNAME|SOREG,		TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
-		NSPECIAL,	RDEST,
-		"st	ZR,ZL\nst	UR,UL\n", },
+		0,	RDEST,
+		"ZK", },
 
 { ASSIGN,	INBREG|FOREFF,
 	SBREG,	TLONG|TULONG,
@@ -723,8 +728,8 @@ struct optab table[] = {
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	SAREG,		TCHAR|TUCHAR,
 	ARONS	,	TCHAR|TUCHAR,
-		0,	RDEST|RESCC,
-		"ld	ALl,AR\n", },
+		NSPECIAL,	RDEST|RESCC,
+		"ld	ALl,AR ; asb\n", },
 
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	SAREG,		TCHAR|TUCHAR,
@@ -736,7 +741,7 @@ struct optab table[] = {
 	ARONS,	TCHAR|TUCHAR,
 	SAREG,	TCHAR|TUCHAR,
 		NSPECIAL,	RDEST|RESCC,
-		"st	ARl,AL\n", },
+		"st	ARl,AL; asb\n", },
 
 /* Floating point */
 
@@ -868,7 +873,7 @@ struct optab table[] = {
 	SANY,		TANY,
 	SOREG,		TLONG|TULONG,
 	NSPECIAL|NBREG,	RESC1, /* |NBSL - may overwrite index reg */
-		"ld	Z1,ZR\nld	U1,UR\n", },
+		"ld	Z1,ZR; umull\nld	U1,UR\n", },
 
 { UMUL,	INAREG,
 	SAREG,		TPOINT|TWORD,
@@ -880,7 +885,7 @@ struct optab table[] = {
 	SAREG,		TPOINT | TWORD,
 	SOREG,		TCHAR|TUCHAR,
 	NSPECIAL|NAREG|NASL,	RESC1,
-		"ld	A1l,AR\n", },
+		"ld	A1l,AR; umulb\n", },
 
 /* Use a pair of moves. For FR0 we could use LR but it's likely to be
    emulated anyway */
@@ -1074,7 +1079,7 @@ struct optab table[] = {
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
 	SCON,		TCHAR|TUCHAR,
-		NAREG,	RESC1,
+		NSPECIAL|NAREG,	RESC1,
 		"ld	A1l, CL\n", },
 
 { OPLTYPE,	INAREG,

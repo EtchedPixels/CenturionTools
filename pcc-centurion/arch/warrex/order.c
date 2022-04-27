@@ -189,12 +189,20 @@ setuni(NODE *p, int cookie)
 /*
  *	We can only memory load/store into A B or X
  */
+static struct rspecial load8[] = {
+	{NOLEFT,  R_Y}, {NOLEFT, R_X}, { 0 }
+};
+
 static struct rspecial load16[] = {
 	{NOLEFT,  R_Y}, { 0 }
 };
 
 static struct rspecial load32[] = {
-	{NOLEFT,  R_YA}, {NOLEFT, R_XY }, { 0 }
+	{NOLEFT,  R_YA}, {NOLEFT, R_YX }, { 0 }
+};
+
+static struct rspecial store8[] = {
+	{NORIGHT,  R_Y}, {NORIGHT, R_X}, { 0 }
 };
 
 static struct rspecial store16[] = {
@@ -202,15 +210,20 @@ static struct rspecial store16[] = {
 };
 
 static struct rspecial store32[] = {
-	{NORIGHT,  R_YA}, {NORIGHT, R_XY }, { 0 }
+	{NORIGHT,  R_YA}, {NORIGHT, R_YX }, { 0 }
+};
+
+/* Not ideal */
+static struct rspecial opl8[] = {
+	{ NRES, R_A} , { 0 }
 };
 
 static struct rspecial opl16[] = {
-	{NEVER,  R_Y}, { 0 }
+	{NRES,  R_A}, { 0 }
 };
 
 static struct rspecial opl32[] = {
-	{NEVER,  R_Y}, { 0 }
+	{NRES,  R_BA}, { 0 }
 };
 
 /*
@@ -266,9 +279,22 @@ struct rspecial *nspecial(struct optab *q)
 {
 	switch (q->op) {
 		case SCONV:
+			if (q->visit & INAREG) {
+				if (q->rtype & TCHAR)
+					return load8;
+				else
+					return load16;
+			}
+			if (q->visit & INBREG)
+				return conv32;
+			break;
 		case UMUL:
-			if (q->visit & INAREG)
-				return load16;
+			if (q->visit & INAREG) {
+				if (q->rtype & TCHAR)
+					return opl8;
+				else
+					return opl16;
+			}
 			if (q->visit & INBREG)
 				return conv32;
 			break;
@@ -290,16 +316,22 @@ struct rspecial *nspecial(struct optab *q)
 				return shift32;
 			break;
 		case ASSIGN:
+			/* Load left with right, store right to left */
 			if (q->visit & INAREG) {
-				/* Store */
-				if (q->lshape == SAREG)
-					return store16;
-				return load32;
+				if (q->lshape == SAREG) {
+					if (q->ltype & TCHAR)
+						return load8;
+					else
+						return load16;
+				}
+				if (q->rtype & TCHAR)
+					return store8;
+				return store16;
 			}
 			if (q->visit & INBREG) {
-				if (q->lshape == SAREG)
-					return store32;
-				return load32;
+				if (q->lshape == SBREG)
+					return load32;
+				return store32;
 			}
 			break;
 		case OPLOG:
@@ -307,8 +339,12 @@ struct rspecial *nspecial(struct optab *q)
 				return oplogc16;
 			break;
 		case OPLTYPE:
-			if (q->visit & INAREG)
-				return opl16;
+			if (q->visit & INAREG) {
+				if (q->rtype & TCHAR)
+					return opl8;
+				else
+					return opl16;
+			}
 			if (q->visit & INBREG)
 				return opl32;
 			break;

@@ -1146,6 +1146,16 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define TLOAD	0x1C00			/* Load */
 #define TSTORE	0x1D00			/* Store */
 #define TJUMP8	0x1E00			/* Extending 8bit branch */
+#define TREGA8	0x1F00			/* TREGA 8bit only */
+#define TREG8	0x2000			/* TREG 8bit only */
+#define TREG2A8	0x2100			/* TREG2 8bit only */
+#define TMOVE8	0x2200			/* TMOVE 8bit only */
+#define TLOADEB	0x2300
+#define TLOADEW	0x2400
+#define TLOADX	0x2500
+#define TSTOREEB 0x2600
+#define TSTOREEW 0x2700
+#define TSTOREX 0x2800
 
 /*
  * Registers.

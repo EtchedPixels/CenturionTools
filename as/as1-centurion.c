@@ -194,15 +194,6 @@ void address_encoding(uint8_t opbase, unsigned type, unsigned store, unsigned si
 				outab(((a2.a_type & TMREG) << 4));
 			}
 			return;
-		case 2:	/* Jumps.. weird implicit use of A */
-			if ((a2.a_type & TMREG) != RA) {
-				aerr(AREGONLY);
-				return;
-			}
-			outab(opbase | 5);
-			/* Implicit 8 (A + offset) */
-			outab(a1.a_value);
-			return;
 		}
 		break;
 	case TSR:
@@ -252,6 +243,7 @@ void asmline(void)
 	ADDR a1;
 	ADDR a2;
 	unsigned r1, r2;
+	unsigned force8 = 0;
 
 loop:
 	if ((c=getnb())=='\n' || c==';')
@@ -409,10 +401,14 @@ loop:
 		break;
 	/* ALU type one register operations. Add 0x10 for word format. If
 	   the register is A or AL then add 0x08 and omit the second byte */
+	case TREGA8:
+		force8 = 1;
 	case TREGA:
 		getaddr(&a1);
 		switch (a1.a_type & TMMODE) {
 		case TWR:
+			if (force8)
+				aerr(BREGONLY);
 			if ((a1.a_type & TMREG)  == RA)
 				outab(opcode | 0x18);
 			else {
@@ -433,10 +429,14 @@ loop:
 		}
 		break;
 	/* As with TREGA but no short form */
+	case TREG8:
+		force8 = 1;
 	case TREG:
 		getaddr(&a1);
 		switch (a1.a_type & TMMODE) {
 		case TWR:
+			if (force8)
+				aerr(BREGONLY);
 			outab(opcode | 0x10);
 			outab((a1.a_type & TMREG) << 4);
 			break;
@@ -459,6 +459,9 @@ loop:
 		byte:	45 r1 r2
 			2E r1 r2	but not A,G
 		BL,AL	4D */
+		/* TODO PC move */
+	case TMOVE8:
+		force8 = 1;
 	case TMOVE:
 		getaddr(&a1);
 		comma();
@@ -467,6 +470,8 @@ loop:
 		r2 = a2.a_type & TMREG;
 		switch(a1.a_type & TMMODE) {
 		case TWR:
+			if (force8)
+				aerr(BREGONLY);
 			if ((a2.a_type & TMMODE) != TWR) 
 				aerr(WREGONLY);
 			if (r1 == RX && r2 == RA)
@@ -523,12 +528,16 @@ loop:
 		outab(opcode | (a1.a_value << 4));
 		break;
 	/* Two register ALU operations with short forms */
+	case TREG2A8:
+		force8 = 1;
 	case TREG2A:
 		getaddr(&a1);
 		comma();
 		getaddr(&a2);
 		switch(a1.a_type & TMMODE) {
 		case TWR:
+			if (force8)
+				aerr(BREGONLY);
 			if ((a2.a_type & TMMODE) != TWR)
 				aerr(WREGONLY);
 			if ((a1.a_type & TMREG) == RB &&
@@ -582,7 +591,8 @@ loop:
 		}
 		break;		
 	case TJUMP:
-		/* Sort of like load/store but apparently not quite */
+		/* Sort of like load/store but the address generated ends up
+		   in PC not read from into a register */
 		address_encoding(opcode, 2, 0, 2);
 		break;
 	case TSTORE:
@@ -629,6 +639,25 @@ loop:
 		}
 		break;
 	}
+	case TLOADEW:
+		address_encoding(opcode, 0, 0, 2);
+		break;
+	case TLOADEB:
+		address_encoding(opcode, 0, 0, 1);
+		break;
+	case TSTOREEW:
+		address_encoding(opcode, 0, 1, 2);
+		break;
+	case TSTOREEB:
+		address_encoding(opcode, 0, 1, 1);
+		break;
+	case TLOADX:
+		address_encoding(opcode, 1, 0, 2);
+		break;
+	case TSTOREX:
+		address_encoding(opcode, 1, 1, 2);
+		break;
+
 	case TREL8:
 		getaddr(&a1);
 		/* FIXME: do wo need to check this is constant ? */

@@ -18,8 +18,12 @@ the TMS9995 and 6800 C compiler kits.
 
 This is an initial cut at an assembler for what we know of the Warrex
 Centurion CPU6 processor. The register naming is believed to be right
-except for the mystery top registers. Things like instruction naming and
-syntax are another question.
+except for the mystery top registers. The syntax is primarily taken from
+the EE200 but additional more generic operations like LD AL,xx are permitted
+as well as the official LDAB xx.
+
+As with the EE200 the source is on the left, so XFRB AL,BL places AL into
+BL, and SUB A,B subtracts A from B (and has the short form SAB).
 
 It should pick the shortest forms for instructions when it can.
 
@@ -44,7 +48,7 @@ will change if documentation gives us more useful results. Note that jump
 in particular is a bit incoherent because JUMP actually uses the address
 generator and stores the generated address into PC. We map
 
-	JUMP xxxx
+	JMP xxxx
 	JMP (xxxx)
 
 to one or two levels of indirection appropriately but don't currently do so

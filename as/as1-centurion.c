@@ -12,11 +12,13 @@
 
 /* FIXME: we should malloc/realloc this on non 8bit machines */
 static uint8_t reltab[1024];
-static unsigned int nextrel;
+static unsigned nextrel;
+static unsigned cpu_model;
 
 int passbegin(int pass)
 {
 	segment = 1;		/* Default to code */
+	cpu_model =  6;		/* Assume CPU-6 for now */
 	if (pass == 3)
 		nextrel = 0;
 	return 1;		/* All passes required */
@@ -400,6 +402,22 @@ loop:
 			outab(0);
 		break;
 
+	case TSETCPU:
+		getaddr(&a1);
+		constify(&a1);
+		istuser(&a1);
+		switch(a1.a_value) {
+		case 4:
+			cpu_model = 4;
+			break;
+		case 6:
+			cpu_model = 6;
+			break;
+		default:
+			/* What error ?? */
+			aerr(SYNTAX_ERROR);
+		}
+		break;
 	/* Implicit one or two byte operation */
 	case TIMPL:
 		if (opcode > 0x0100)
@@ -455,7 +473,7 @@ loop:
 			aerr(REGONLY);
 		}
 		break;
-	/* mov reg,reg - lots of encodings
+	/* xfr[b] reg,reg - lots of encodings
 		word: 
 		word: 55 r1 r2	
 		X,A 5B
@@ -475,21 +493,32 @@ loop:
 		getaddr(&a2);
 		r1 = a1.a_type & TMREG;
 		r2 = a2.a_type & TMREG;
-		switch(a1.a_type & TMMODE) {
+		switch(a2.a_type & TMMODE) {
+		case TSR:
+			if (force8)
+				aerr(BREGONLY);
+			/* PC */
+			if ((a1.a_type & TMMODE) != TWR)
+				aerr(WREGONLY);
+			if (r2 == RA && r1 == RPC)
+				outab(0x0D);
+			else
+				aerr(BADADDR);
+			break;
 		case TWR:
 			if (force8)
 				aerr(BREGONLY);
-			if ((a2.a_type & TMMODE) != TWR) 
+			if ((a1.a_type & TMMODE) != TWR)
 				aerr(WREGONLY);
-			if (r1 == RX && r2 == RA)
+			if (r2 == RX && r1 == RA)
 				outab(0x5B);
-			else if (r1 == RY && r2 == RA)
+			else if (r2 == RY && r1 == RA)
 				outab(0x5C);
-			else if (r1 == RB && r2 == RA)
+			else if (r2 == RB && r1 == RA)
 				outab(0x5D);
-			else if (r1 == RZ && r2 == RA)
+			else if (r2 == RZ && r1 == RA)
 				outab(0x5D);
-			else if (r1 == RS && r2 == RA)
+			else if (r2 == RS && r1 == RA)
 				outab(0x5F);
 			else {
 				outab(0x55);
@@ -497,7 +526,7 @@ loop:
 			}
 			break;
 		case TBR:
-			if ((a2.a_type & TMMODE) != TBR)
+			if ((a1.a_type & TMMODE) != TBR)
 				aerr(BREGONLY);
 			if (r1 == RBL && r2 == RAL)
 				outab(0x4D);
@@ -547,8 +576,8 @@ loop:
 				aerr(BREGONLY);
 			if ((a2.a_type & TMMODE) != TWR)
 				aerr(WREGONLY);
-			if ((a1.a_type & TMREG) == RB &&
-				(a2.a_type & TMREG) == RA)
+			if ((a2.a_type & TMREG) == RB &&
+				(a1.a_type & TMREG) == RA)
 				outab(opcode | 0x18);
 			else {
 				outab(opcode | 0x10);
@@ -558,12 +587,12 @@ loop:
 		case TBR:
 			if ((a2.a_type & TMMODE) != TBR)
 				aerr(BREGONLY);
-			if ((a1.a_type & TMREG) == RBL &&
-				(a2.a_type & TMREG) == RAL)
+			if ((a2.a_type & TMREG) == RBL &&
+				(a1.a_type & TMREG) == RAL)
 				outab(opcode | 0x08);
 			else {
 				outab(opcode);
-				outab((a2.a_type & TMREG) << 4 | (a1.a_type & TMREG));
+				outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
 			}
 			break;
 		default:
@@ -580,17 +609,17 @@ loop:
 			if ((a2.a_type & TMMODE) != TWR)
 				aerr(WREGONLY);
 			outab(opcode | 0x10);
-			outab((a2.a_type & TMREG) << 4 | (a1.a_type & TMREG));
+			outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
 			break;
 		case TBR:
 			if ((a2.a_type & TMMODE) != TBR)
 				aerr(BREGONLY);
-			if ((a1.a_type & TMREG) == RBL &&
-				(a2.a_type & TMREG) == RAL)
+			if ((a2.a_type & TMREG) == RBL &&
+				(a1.a_type & TMREG) == RAL)
 				outab(opcode | 0x08);
 			else {
 				outab(opcode);
-				outab((a2.a_type & TMREG) << 4 | (a1.a_type & TMREG));
+				outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
 			}
 			break;
 		default:
@@ -624,6 +653,8 @@ loop:
 				aerr(REGABBYTE);
 			break;	
 		case TWR:
+			if (force8)
+				aerr(BREGONLY);
 			encoding |= 0x10;
 			if (r1 == RA)
 				address_encoding(encoding, 0, store, 2);

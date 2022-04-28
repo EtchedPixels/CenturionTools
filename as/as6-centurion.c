@@ -46,6 +46,7 @@ SYM	sym[] = {
 	{	0,	".org",		TORG,		XXXX	},
 	{	0,	".equ",		TEQU,		XXXX	},
 	{	0,	".export",	TEXPORT,	XXXX	},
+	{	0,	".setcpu",	TSETCPU,	XXXX	},
 	{	0,	"abs",		TSEGMENT,	ABSOLUTE},
 	{	0,	"code",		TSEGMENT,	CODE	},
 	{	0,	"data",		TSEGMENT,	DATA	},

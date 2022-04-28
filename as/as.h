@@ -1156,6 +1156,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define TSTOREEB 0x2600
 #define TSTOREEW 0x2700
 #define TSTOREX 0x2800
+#define	TSETCPU	0x2900			/* setcpu */
 
 /*
  * Registers.

@@ -1,6 +1,9 @@
-all:
+all: 	ccwrx6
 	(cd as; make)
 	(cd ld; make)
+	(cd common; make)
+	(cd ccom; make)
+	(cd copt; make)
 
 install:
 	mkdir -p /opt/aswrx6/bin
@@ -14,8 +17,9 @@ install:
 ccwrx6: ccwrx6.c
 	gcc -Wall -pedantic -O2 ccwrx6.c -o ccwrx6
 
+
 # Members for the C library
-OBJ =	libc/memcpy.o \
+COBJ =	libc/memcpy.o \
 	libc/memset.o \
 	libc/strlen.o \
 	libc/abort.o \
@@ -117,8 +121,8 @@ STDIO =	stdio/fclose.o \
 	stdio/vscanf.o \
 	stdio/vsscanf.o
 
-libc.a:	ccwrx6 $(STDIO) $(OBJ)
-	ar rc libc.a $(STDIO) $(OBJ) $(AOBJ)
+libc.a:	ccwrx6 $(STDIO) $(COBJ)
+	ar rc libc.a $(STDIO) $(COBJ) $(AOBJ)
 
 %.o: %.s
 	aswrx6 $^
@@ -129,5 +133,7 @@ libc.a:	ccwrx6 $(STDIO) $(OBJ)
 clean:
 	(cd as; make clean)
 	(cd ld; make clean)
-	rm -f $(OBJ) $(STDIO)
+	(cd common; make clean)
+	(cd ccom; make clean)
+	rm -f $(COBJ) $(STDIO)
 	rm *~

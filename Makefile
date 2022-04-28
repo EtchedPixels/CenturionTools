@@ -1,7 +1,6 @@
 all:
 	(cd as; make)
 	(cd ld; make)
-	(cd pcc-centurion; make -f Makefile.go)
 
 install:
 	mkdir -p /opt/aswrx6/bin
@@ -9,8 +8,6 @@ install:
 	mkdir -p /opt/aswrx6/lib
 	(cd as; make install)
 	(cd ld; make install)
-	cp pcc-centurion/cc/cpp/warrex-cpp /opt/aswrx6/lib/
-	cp pcc-centurion/cc/ccom/warrex-* /opt/aswrx6/lib/
 	cp ccwrx6 /opt/aswrx6/bin/
 	cp -r include/* /opt/aswrx6/include/
 
@@ -132,6 +129,5 @@ libc.a:	ccwrx6 $(STDIO) $(OBJ)
 clean:
 	(cd as; make clean)
 	(cd ld; make clean)
-	(cd pcc-centurion; make clean)
 	rm -f $(OBJ) $(STDIO)
 	rm *~

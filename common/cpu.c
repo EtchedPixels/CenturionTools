@@ -62,17 +62,15 @@ cpu_t CPU = CPU_UNKNOWN;
 /* Table with target names */
 const char* CPUNames[CPU_COUNT] = {
     "none",
-    "6800",
-    "6803",
-    "6303",
+    "4",
+    "6",
 };
 
 /* Tables with CPU instruction sets */
 const unsigned CPUIsets[CPU_COUNT] = {
     CPU_ISET_NONE,
-    CPU_ISET_6800,
-    CPU_ISET_6803,
-    CPU_ISET_6303
+    CPU_ISET_4,
+    CPU_ISET_6,
 };
 
 

@@ -123,7 +123,6 @@ void GetCodePos(CodeMark *m)
 {
     m->Text = CodeHead.prev;
     m->SP = StackPtr;
-    m->X = XState;
     m->Movable = 0;
 }
 
@@ -131,7 +130,6 @@ void GetCodePosMovable(CodeMark *m)
 {
     m->Text = CodeHead.prev;
     m->SP = StackPtr;
-    m->X = XState;
     m->Movable = 1;
     g_moveable();
 }
@@ -148,7 +146,6 @@ void RemoveCode(const CodeMark *m)
 {
     TextListRemoveTail(&CodeHead, MarkToText(m)->prev);
     StackPtr = m->SP;
-    XState = m->X;
 }
 
 /* Move the code between Start (inclusive) and End (exclusive) to

@@ -80,55 +80,6 @@ static GenDesc GenXOASGN = { TOK_XOR_ASSIGN,    GEN_NOPUSH,     g_xor };
 static GenDesc GenOASGN  = { TOK_OR_ASSIGN,     GEN_NOPUSH,     g_or  };
 
 
-/* Flesh this out and keep the goals and Mark for the X version in
-   the ExprDesc somewhere. Ideally we want the failure check to
-   remove the old code so we can just regenerate with D. Need to flesh this
-   out and look at XFailure stacking etc before we can use it */
-int XFailure;
-int XDepth;
-CodeMark XCode;
-
-void NotViaX(void)
-{
-    XFailure = 1;
-}
-
-/* Begin an attempt to generate the expression via X. This can be called
-   recursively and we will make a final assessment in EndVia the final
-   depth */
-   
-void TryViaX(void)
-{
-    if (XDepth++ == 0) {
-//        printf("Begin try via X\n");
-        XFailure = 0;
-        GetCodePos(&XCode);
-    }
-}
-
-/* Complete an attempt to generate code going via X. If we succeeded or have
-   yet to resolve the attempt return 0. If we fail return 1 (maybe cause type
-   later) and throw out the failed code. */
-   
-int EndViaX(void)
-{
-    if (--XDepth == 0) {
-//        printf("End via X %d\n", XFailure);
-        if (XFailure) {
-            RemoveCode(&XCode);
-            return XFailure;
-        }
-    }
-    return 0;
-}
-
-int SourceX(void)
-{
-    return XDepth;
-}
-
-/* See if we need a stack for the XFailure stuff */
-
 /*****************************************************************************/
 /*                             Helper functions                              */
 /*****************************************************************************/
@@ -570,9 +521,7 @@ static void FunctionCall (ExprDesc* Expr)
         g_callind (TypeOf (Expr->Type+1), PtrOffs, ParamSize - Func->ParamSize);
 
         /* Drop parameters, preserve D if needed */
-        /* 6800 the callee does the drop */
-        if (CPU != CPU_6800 || (Func->Flags & FD_VARIADIC))
-            g_drop(ParamSize, NotVoid);
+        g_drop(ParamSize, NotVoid);
         StackPtr += ParamSize;
         /* If we have a pointer on stack, remove it */
         if (PtrOnStack) {
@@ -587,8 +536,7 @@ static void FunctionCall (ExprDesc* Expr)
         /* Normal function */
         g_call (TypeOf (Expr->Type), (const char*) Expr->Name, ParamSize - Func->ParamSize);
         /* Drop parameters, preserve D if needed */
-        if (CPU != CPU_6800 || (Func->Flags & FD_VARIADIC))
-            g_drop(ParamSize, NotVoid);
+        g_drop(ParamSize, NotVoid);
         StackPtr += ParamSize;
     }
     /* FIXME: optimization - it would be worth tracking how many arguments

@@ -52,40 +52,21 @@
 /*****************************************************************************/
 
 
-#ifdef CC85
 /* CPUs */
 typedef enum {
     CPU_UNKNOWN = -1,           /* Not specified or invalid target */
     CPU_NONE,                   /* No CPU - for assembler */
-    CPU_8085,
+    CPU_4,
+    CPU_6,
     CPU_COUNT
 } cpu_t;
 
 /* CPU instruction sets */
 enum {
-    CPU_ISET_NONE       = 1 << CPU_NONE,
-    CPU_ISET_8085       = 1 << CPU_8085,
+    CPU_ISET_NONE    = 1 << CPU_NONE,
+    CPU_ISET_4       = 1 << CPU_4,
+    CPU_ISET_6       = 1 << CPU_6,
 };
-
-#else
-/* CPUs */
-typedef enum {
-    CPU_UNKNOWN = -1,           /* Not specified or invalid target */
-    CPU_NONE,                   /* No CPU - for assembler */
-    CPU_6800,
-    CPU_6803,                   /* Has 6801 feature set */
-    CPU_6303,			/* Has 6303 xgdx etc */
-    CPU_COUNT
-} cpu_t;
-
-/* CPU instruction sets */
-enum {
-    CPU_ISET_NONE       = 1 << CPU_NONE,
-    CPU_ISET_6800       = 1 << CPU_6800,
-    CPU_ISET_6803       = 1 << CPU_6803,
-    CPU_ISET_6303       = 1 << CPU_6303,
-};
-#endif
 
 /* CPU used */
 extern cpu_t CPU;

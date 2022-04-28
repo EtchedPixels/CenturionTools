@@ -94,15 +94,9 @@ static const TargetEntry TargetMap[] = {
 
 
 /* Table with target properties by target id */
-#ifdef CC85
 static const TargetProperties PropertyTable[TGT_COUNT] = {
-    { "none",           CPU_8085,       BINFMT_BINARY,      CTNone  },
+    { "none",           CPU_6,       BINFMT_BINARY,      CTNone  },
 };
-#else
-static const TargetProperties PropertyTable[TGT_COUNT] = {
-    { "none",           CPU_6303,       BINFMT_BINARY,      CTNone  },
-};
-#endif
 
 /* Target system */
 target_t Target = TGT_NONE;

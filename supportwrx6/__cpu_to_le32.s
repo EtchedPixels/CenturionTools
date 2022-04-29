@@ -18,4 +18,4 @@ __le32_to_cpu:
 	xfrb	yl,bh
 __cpu_to_be32:
 __be32_to_cpu:
-	rts
+	rsr

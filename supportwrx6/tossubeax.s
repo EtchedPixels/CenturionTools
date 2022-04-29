@@ -22,6 +22,6 @@ noripple:
 	; Throw 4 bytes
 	ldb	(-s)
 	ldb	(-s)
-	rtr
+	rsr
 
 

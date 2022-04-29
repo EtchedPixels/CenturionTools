@@ -8,9 +8,9 @@
 
 negeax:
 	iva
-	ivr y
+	ivr	y
 	ina
-	bnz noripple
-	inr y
+	bnz	noripple
+	inr	y
 noripple:
-	rtr
+	rsr

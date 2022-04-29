@@ -11,11 +11,11 @@ asreax8:
 	xfrb	ah,al
 	xfrb	yl,ah
 	xfrb	yh,yl
-	bpl	nosign
+	bp	nosign
 	clrb	yh
-	decb	yh
-	rtr
+	dcrb	yh
+	rsr
 nosign:
 	clrb	yh
-	rtr
+	rsr
 

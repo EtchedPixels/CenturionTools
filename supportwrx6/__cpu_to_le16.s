@@ -14,4 +14,4 @@ __le16_to_cpu:
 	xfrb	bl,ah
 __cpu_to_be16:
 __be16_to_cpu:
-	rtr
+	rsr

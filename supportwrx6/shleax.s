@@ -17,19 +17,19 @@
 shleax4:
 asleax4:
 	sla
-	rlr y
+	rlr	y
 shleax3:
 asleax3:
 	sla
-	rlr y
+	rlr	y
 shleax2:
 asleax2:
 	sla
-	rlr y
+	rlr	y
 shleax1:
 asleax1:
 	sla
-	rlr y
-	rtr
+	rlr	y
+	rsr
 
 

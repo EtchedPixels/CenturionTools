@@ -1,11 +1,11 @@
 ;
 ;	32bit unsigned divide. Used as the core for the actual C library
 ;	division routines. It expects to be called with the parameters
-;	offsets from X, and uses tmp/tmp2/tmp3.
+;	offsets from S
 ;
 ;	tmp2/tmp3 end up holding the remainder
 ;
-;	On entry the stack frame referenced by X looks like this
+;	On entry the stack frame referenced by S looks like this
 ;
 ;	6-9	32bit dividend (C compiler TOS)
 ;	4,5	A return address
@@ -19,66 +19,96 @@
 ;	out and have shifted all of Q into the result.
 ;
 
-DIVIS		.equ	0
-;		4/5,x are a return address and it's easier to just leave
+DIVIS		.equ	6
+;		In between is a pushed rt - it's easier to just leave
 ;		the gap
-DIVID		.equ	6
+DIVID		.equ	12
 
-		.setcpu 6803
+		.setcpu 6
 
 		.export div32x32
 		.code
 
 div32x32:
-		ldab #32		; 32 iterations for 32 bits
-		stab @tmp
-		ldd @zero
-		; Clear the working register (tmp2/tmp3)
+		stx	(-s)
+		xfr	z,a
+		sta	(-s)
+
+		ldb 	32		; 32 iterations for 32 bits
+
+		; Clear the working register YZ
 		; R = 0;
-		std @tmp2
-		std @tmp3
-loop:		; Shift the dividend left and set bit 0 assuming that
+		clr	y
+		clr	z
+
+loop:		stb	(-s)
+
+		; Shift the dividend left and set bit 0 assuming that
 		; R >= D
-		sec
-		rol DIVID+3,x
-		rol DIVID+2,x
-		rol DIVID+1,x
-		rol DIVID,x
+		sl
+		ldb	DIVID+2(s)
+		rlr	b
+		stb	DIVID+2(s)
+		ldb	DIVID(s)
+		rlr	b
+		stb	DIVID(s)
+
 		; N(i) is now in carry
 		; R <<= 1; R(0) = N(i)
 		; Capture into the working register
-		rol @tmp3+1		; capturing high bit into the
-		rol @tmp3		; working register bottom
-		rol @tmp2+1
-		rol @tmp2
+
+		rlr	z
+		rlr	y
+
+		; capturing high bit into the working register bottom
+
 		; Do a 32bit subtract but skip writing the high 16bits
 		; back until we know the comparison
 		;
 		; R - D
 		;
-		ldd @tmp3
-		subd DIVIS+2,x
-		std @tmp3
-		ldd @tmp2
-		sbcb DIVIS+1,x
-		sbca DIVIS,x
+		ldb	z
+		xfr	b,x
+		lda	DIVIS+2(s)
+		sab
+		xfr	b,z
+		ldb	y
+		lda	DIVIS(s)
+		bnl	noripple
+		dcr	b
+noripple:
+		sab
+		; The flags are bass-ackward on the sub
 		; Want to subtract (R - D >= 0)
-		bcc skip
+		bl	skip
+		bz	skip
 		; No subtract, so put back the low 16bits we mushed
-		ldd @tmp3
-		addd DIVIS+2,x
-		std @tmp3
+		xfr	x,z
 		; We guessed the wrong way for Q(i). Clear Q(i) which is
 		; in the lowest bit and we know is set so using dec is safe
-		dec DIVID+3,x
+		ldab	DIVID+3(s)
+		dcab
+		stab	DIVID+3(s)
 done:
-		dec @tmp
-		bne loop
-		rts
+		ldb	(s+)
+		dcr	b
+		bnz	loop
+
+		; Result is in ZY - move it
+		;  FIXME: if we swapped over YZ use in the loop we could
+		; save an instruction here. Worry about this once it's
+		; debugged
+		xfr	y,a
+		xfr	z,b
+
+		ldx	(s+)
+		xfr	x,z
+		ldx	(s+)
+		rsr
+
 		; We do want to subtract - write back the other bits
 skip:
 		; R -= D
-		std @tmp2
-		dec @tmp
-		bne loop
-		rts
+		xfr	b,y
+		bra	done
+

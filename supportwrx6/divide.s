@@ -1,7 +1,4 @@
 ;
-;	Baed on the 6303 version except that we lack xgdx so it's a little
-;	bit uglier
-;
 ;	This is the classic division algorithm
 ;
 ;	On entry D holds the divisor and X holds the dividend
@@ -28,13 +25,14 @@
 
 div16x16:
 	stx	(-s)
-	sty	(-s)
+	xfr	y,x
+	stx	(-s)
 
 	; Calculate A / B
 
 
-	ldb	16		; bit count
-	xfrb	b,y
+	ldx	16		; bit count
+	xfrb	xl,yl
 
 	clr	x		; working register
 loop:
@@ -48,6 +46,6 @@ loop:
 	add	b,x
 	dca			; clear low bit of A
 skip:
-	dcrb	y
+	dcrb	yl
 	bnz	loop
-	rtr
+	rsr

@@ -12,11 +12,11 @@ tosudivax:
 	ldb	2(s)
 	jsr div16x16
 	ldb	(s+)
-	rtr
+	rsr
 
 tosumodax:
 	ldb	2(s)
 	jsr	div16x16
 	xfr	b,a
 	ldb	(s+)
-	rtr
+	rsr

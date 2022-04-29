@@ -24,13 +24,13 @@ laddeq:
 	add	x,a
 	stx	2(b)
 	xfr	x,a
-	bc	ripple		; One in 64K times so can be slower
+	bl	ripple		; One in 64K times so can be slower
 	ldx	(s+)
-	rtr
+	rsr
 ripple:
 	ldx	(b)
 	inx
 	stx	(b)
 	inr	y
 	ldx	(s+)
-	rtr
+	rsr

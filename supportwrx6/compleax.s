@@ -14,4 +14,5 @@ compleax:
 	ina
 	bnz	nocarry
 	inr	y
-	rtr
+nocarry:
+	rsr

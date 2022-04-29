@@ -34,4 +34,4 @@ noadd:		sll	b
 		; Result in BA, we don't use the upper half for anything
 		; yet but it might be a handy optimisation path for 32x16
 		; maths when it pops up
-		rtr
+		rsr

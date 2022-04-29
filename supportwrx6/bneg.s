@@ -8,15 +8,15 @@
 	.export bnega
 	.export bnegax
 
-bnegax:	xfr y,b
-	ori a,b
-	bz ret1
+bnegax:	xfr	y,b
+	ori	a,b
+	bz	ret1
 ret0:
 	cla
-	rtr
+	rsr
 
-bnega:	ori a,a
-	bnz ret0
+bnega:	ori	a,a
+	bnz	ret0
 ret1:
-	lda 1
-	rtr
+	lda	1
+	rsr

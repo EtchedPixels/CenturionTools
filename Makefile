@@ -136,11 +136,42 @@ STDIO =	stdio/fclose.o \
 	stdio/vscanf.o \
 	stdio/vsscanf.o
 
+SUPPORT = \
+	supportwrx6/asreax8.o \
+	supportwrx6/bneg.o \
+	supportwrx6/compleax.o \
+	supportwrx6/__cpu_to_le16.o \
+	supportwrx6/__cpu_to_le32.o \
+	supportwrx6/divide32x32.o \
+	supportwrx6/divide.o \
+	supportwrx6/laddeq.o \
+	supportwrx6/lbneg.o \
+	supportwrx6/lsubeq.o \
+	supportwrx6/makebool.o \
+	supportwrx6/multiply32x32.o \
+	supportwrx6/negeax.o \
+	supportwrx6/shleax.o \
+	supportwrx6/shr.o \
+	supportwrx6/tosasleax.o \
+	supportwrx6/tosasreax.o \
+	supportwrx6/tosdivax.o \
+	supportwrx6/tosdiveax.o \
+	supportwrx6/tosmodeax.o \
+	supportwrx6/tosshlax.o \
+	supportwrx6/tossubeax.o \
+	supportwrx6/tosudivax.o \
+	supportwrx6/tosudiveax.o \
+	supportwrx6/tosumodeax.o \
+	supportwrx6/tosumulax.o
+
 crt0.o: aswrx6 crt0.s
 	aswrx6 crt0.s
 
 libc.a:	ccwrx6 $(STDIO) $(COBJ)
 	ar rc libc.a $(STDIO) $(COBJ) $(AOBJ)
+
+libwrx6.a: ccwrx6 $(SUPPORT)
+	ar rc libwrx6.a $(SUPPORT)
 
 %.o: %.c
 	./ccwrx6 -Iinclude -c $^

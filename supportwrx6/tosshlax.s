@@ -21,8 +21,8 @@ shloop:
 	dcr	b
 	bnz	shloop
 	ldb	(s+)		; Throw 2 bytes
-	rtr
+	rsr
 shiftout:
 	cla
 	ldb	(s+)
-	rtr
+	rsr

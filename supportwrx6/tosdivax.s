@@ -5,79 +5,68 @@
 ;	Dividend and remainder have the same sign
 ;	Quotient is negative if signs disagree
 ;
+;	Our helper does unsigned div/mod of A / B into X r B
+;
+;
 ;	So we do the maths in unsigned then fix up
 ;
 	.export tosdivax
 	.export tosmodax
 
-	.setcpu 6803
+	.setcpu 6
+
+;
+;	The sign of the remainder of a division is not defined until C99.
+;	C99 says it's the sign of the dividend.
+;
+tosdivax:
+	xab
+	stx	(-s)
+	clr	x
+	ori	a,a
+	bp	plusmod
+	ivr	b
+	inr	b		; change sign
+	inx			; remember sign
+plusmod:
+	lda	2(s)
+	bp	plusmod2
+	iva
+	ina
+	dex			; track sign
+plusmod2:
+	jsr div16x16		; do the unsigned divide
+				; X = quotient, B remainder
+signfix:
+	ori	x,x
+	bz	sign_good
+	iva
+	ina
+sign_good:
+	ldx	(s+)
+	ldb	(s+)		; throw TOS value
+	rsr
 
 ;
 ;	The sign of the remainder of a division is not defined until C99.
 ;	C99 says it's the sign of the dividend.
 ;
 tosmodax:
-	tsx
-	bsr absd
-	pshb
-	psha
-	ldd 2,x
-	bita #$80		; sign bit of dividend
-	bne negmod
-	ldx 2,x			; get the dividend (unsigned)
-	pula
-	pulb
+	xab
+	stx	(-s)
+	clr	x
+	ori	a,a
+	bp	plusdiv
+	ivr	b
+	inr	b		; change sign
+	inx			; remember sign
+plusdiv:
+	lda	2(s)
+	bp	plusdiv2
+	iva
+	ina
+plusdiv2:
 	jsr div16x16		; do the unsigned divide
-				; X = quotient, D = remainder
-	jmp pop2
-negmod:
-	bsr negd
-	std 2,x
-	pula
-	pulb
-	ldx 2,x
-	jsr div16x16
-	bsr negd
-	jmp pop2
-
-;
-;	D = TOS/D signed
-;
-;	The sign of the result is positive if the inputs have the same
-;	sign, otherwise negative
-;
-tosdivax:
-	clr @tmp4
-	tsx
-	bsr absd
-	pshb
-	psha
-	ldd 2,x
-	bsr absd
-	std 2,x
-	pula
-	pulb
-	ldx 2,x
-	jsr div16x16		; do the maths
-				; X = quotient, D = remainder
-	stx @tmp		; save quotient for fixup
-	ldaa @tmp4
-	rora
-	bcc divdone		; low bit set -> negate
-	ldd @tmp
-	bsr negd
-	jmp pop2
-divdone:
-	ldd @tmp
-	jmp pop2
-
-absd:
-	bita #$80
-	beq ispos
-	inc @tmp4
-negd:
-	subd @one		; negate d
-	coma
-	comb
-ispos:
-	rts
+				; X = quotient, B remainder
+	xfr	b,a
+	bra	signfix

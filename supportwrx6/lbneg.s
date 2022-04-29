@@ -7,10 +7,10 @@
 	.code
 
 bnegeax:
-	ori y,a
-	bz set1
+	ori	y,a
+	bz	set1
 	cla
-	rtr
+	rsr
 set1:
 	ina
-	rtr
+	rsr

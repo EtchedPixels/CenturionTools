@@ -19,21 +19,22 @@ tosshleax:
 	sab
 	bnl	shleax16
 	xab
-	ld	y,2(s)
+	ld	a,2(s)
+	xay
 	ld	a,4(s)
 	ori	b,b
 	bz	retpop
 loop:
 	sla
 	rlr	y
-	dcrb	b
+	dcrb	bl
 	bnz	loop
 	; Throw 4 bytes off the stack, we will corrupt the caller X but
 	; the caller doesn't expect it saved
 retpop:
 	ldb	(s+)
 	ldb	(s+)
-	rtr
+	rsr
 ret0:
 	cla
 	clr	y
@@ -46,12 +47,13 @@ shleax16:
 	xab
 	lda	8
 	sab
+	lda	4(s)
+	xay
 	cla
-	ldy	4,(s)
 	ori	b,b
 	bz	retpop
 loop2:
 	slr	y
 	dcr	b
-	bn	loop2
+	bnz	loop2
 	bra	retpop

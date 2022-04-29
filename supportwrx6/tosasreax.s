@@ -3,7 +3,7 @@
 ;
 	.export tosasreax
 
-	.setcpu 6803
+	.setcpu 6
 	.code
 
 tosasreax:
@@ -11,7 +11,7 @@ tosasreax:
 	sab
 	bl	ret0
 	ori	a,a
-	beq	noshift
+	bz	noshift
 	xab
 	lda	2(s)
 	xay
@@ -19,13 +19,13 @@ tosasreax:
 loop:
 	srr	y
 	rrr	a
-	dcrb	b
+	dcrb	bl
 	bnz	loop
 noshift:
 	; Throw 4 bytes
 	ldb	(s+)
 	ldb	(s+)
-	rtr
+	rsr
 ret0:
 	cla
 	clr	y

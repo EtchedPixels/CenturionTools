@@ -105,9 +105,6 @@ int CanLoadViaX(unsigned Flags, struct ExprDesc *Expr)
     /* The reality is more complicated but we almost never want to put
        something in X, and when do we can use the optimizer to fix it better
        than the compiler */
-    if (CPU == CPU_6800)
-        return 0;
-
     if (ED_IsBitField(Expr) || ED_NeedsTest(Expr)) {
         return 0;
     }

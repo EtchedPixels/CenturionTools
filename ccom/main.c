@@ -292,7 +292,7 @@ static void OptCPU (const char* Opt, const char* Arg)
 {
     /* Find the CPU from the given name */
     CPU = FindCPU (Arg);
-    if (CPU != CPU_6800 && CPU != CPU_6803 && CPU != CPU_6303) {
+    if (CPU != CPU_4 && CPU != CPU_6) {
         AbEnd ("Invalid argument for %s: '%s'", Opt, Arg);
     }
 }
@@ -709,7 +709,7 @@ int main (int argc, char* argv[])
 
     /* If no CPU given, use the default CPU for the target */
     if (CPU == CPU_UNKNOWN) {
-            CPU = CPU_6803;
+            CPU = CPU_6;
     }
 
     /* If no language standard was given, use the default one */

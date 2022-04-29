@@ -127,18 +127,18 @@ static const char* GetLabelName (unsigned Flags, uintptr_t Label, long Offs, int
         case CF_STATIC:
             /* Static memory cell */
             if (Offs) {
-                xsprintf (Buf, sizeof (Buf), "(%s%+ld)", LocalLabelName (Label), Offs);
+                xsprintf (Buf, sizeof (Buf), "%s%+ld", LocalLabelName (Label), Offs);
             } else {
-                xsprintf (Buf, sizeof (Buf), "(%s)", LocalLabelName (Label));
+                xsprintf (Buf, sizeof (Buf), "%s", LocalLabelName (Label));
             }
             break;
 
         case CF_EXTERNAL:
             /* External label */
             if (Offs) {
-                xsprintf (Buf, sizeof (Buf), "(_%s%+ld)", (char*) Label, Offs);
+                xsprintf (Buf, sizeof (Buf), "_%s%+ld", (char*) Label, Offs);
             } else {
-                xsprintf (Buf, sizeof (Buf), "(_%s)", (char*) Label);
+                xsprintf (Buf, sizeof (Buf), "_%s", (char*) Label);
             }
             break;
 
@@ -208,7 +208,7 @@ static void LoadAVia(char r, int offset)
 {
     if (offset > 127)
         Internal("Bad offset %d in LoadAVia%c.\n", offset, r);
-    AddCodeLine("lda %d(x)", offset);
+    AddCodeLine("lda %d(%c)", offset, r);
 }
 
 /* Store the A register to a name */
@@ -288,15 +288,15 @@ static void LsrABy(int n)
     /* TODO: is this a faster path for the CPU6 as well ? */
     if (n >= 8) {
         AddCodeLine("xfr ah,al");
-        AddCodeLine("clr ah");
+        AddCodeLine("clrb ah");
         while(n-- > 8)
-            AddCodeLine("lsrb");	/* Upper bits already done */
+            AddCodeLine("srab");	/* Upper bits already done */
         return;
     }
     AddCodeLine("rl");
     AddCodeLine("rrr a");
     while(--n)
-        AddCodeLine("srr a");
+        AddCodeLine("sra");
 }
 
 static void AslABy(int n)
@@ -306,18 +306,18 @@ static void AslABy(int n)
         return;
     }
     if (CPU != CPU_4) {
-        AddCodeLine("sla a,%d", n);
+        AddCodeLine("slr a,%d", n);
         return;
     }
     if (n >= 8) {
         AddCodeLine("xfr al,ah");
         AddCodeLine("clab");
         while(n-- > 8)
-            AddCodeLine("slab ah");	/* Low bits already done */
+            AddCodeLine("slrb ah");	/* Low bits already done */
         return;
     }
     while(n--)
-        AddCodeLine("sla a");
+        AddCodeLine("sla");
 }
 
 /* Get A into X, may mash A */
@@ -383,9 +383,14 @@ static char GenerateOffset(unsigned Flags, int *Offsp)
     /* The non vararg argument case. Everything is relative to S, X may hold
        something related to S already */
 
+    /* Allow for the save frame below the arguments */
+    if (Offs >= 0)
+        Offs += 4;
     /* If the argument is within the range of Z then use Z */
-    if (Offs >= -128)
+    if (Offs > -128) {
+        *Offsp = Offs;
         return 'z';
+    }
     /* Adjust for current stack pointer */
     Offs -= StackPtr;
 
@@ -632,6 +637,7 @@ void g_importmainargs (void)
 void g_enter (const char *name, unsigned flags, unsigned argsize)
 /* Function prologue */
 {
+    push (CF_INT);		/* Return address */
     push (CF_INT);		/* Saved X */
     AddCodeLine(".export _%s", name);
     AddCodeLine("_%s:",name);
@@ -729,7 +735,7 @@ void g_getimmed (unsigned Flags, unsigned long Val, long Offs)
         if (Flags & CF_USINGX)
             AddCodeLine("ldx %s", Label);
         else
-            AddCodeLine ("ldd %s", Label);
+            AddCodeLine ("lda %s", Label);
     }
 }
 
@@ -753,7 +759,7 @@ void g_getstatic (unsigned flags, uintptr_t label, long offs)
                 if (!(flags & CF_UNSIGNED)) {
                     /* Must sign extend */
                     unsigned L = GetLocalLabel ();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
+                    AddCodeLine ("bp %s", LocalLabelName (L));
                     AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
@@ -801,10 +807,10 @@ void g_getlocal (unsigned Flags, int Offs)
                 AddCodeLine ("ldab %d(%c)", Offs, r);
             } else {
                 AddCodeLine ("clr ah");
-                AddCodeLine ("ldab %02X(%c) ", Offs, r);
+                AddCodeLine ("ldab %d(%c) ", Offs, r);
                 if ((Flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
+                    AddCodeLine ("bp %s", LocalLabelName (L));
                     AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
@@ -882,8 +888,8 @@ void g_getind (unsigned Flags, unsigned Offs)
             AddCodeLine ("clr ah");
             if ((Flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
-                    AddCodeLine ("dcr ah");
+                    AddCodeLine ("bp %s", LocalLabelName (L));
+                    AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
             }
             break;
@@ -957,7 +963,7 @@ void g_putstatic (unsigned flags, uintptr_t label, long offs)
     switch (flags & CF_TYPEMASK) {
 
         case CF_CHAR:
-            AddCodeLine ("stal (%s)", lbuf);
+            AddCodeLine ("stab (%s)", lbuf);
             break;
 
         case CF_INT:
@@ -1093,10 +1099,10 @@ void g_toslong (unsigned flags)
                 unsigned L = GetLocalLabel();
                 AddCodeLine("clr b");
                 AddCodeLine("ldx, (s)");
-                AddCodeLine("bpl %s", LocalLabelName(L));
+                AddCodeLine("bp %s", LocalLabelName(L));
                 AddCodeLine("dcr b");
                 g_defcodelabel (L);
-                AddCodeLine("stb -(s)");
+                AddCodeLine("stb (-s)");
             }
             push (CF_INT);
             break;
@@ -1145,8 +1151,8 @@ static void g_regchar (unsigned Flags)
         AddCodeLine("xfr al,al");
         /* Sign extend */
         L = GetLocalLabel();
-        AddCodeLine ("bpl %s", LocalLabelName (L));
-        AddCodeLine ("dcr ah");
+        AddCodeLine ("bp %s", LocalLabelName (L));
+        AddCodeLine ("dcrb ah");
         g_defcodelabel (L);
     }
 }
@@ -1191,9 +1197,9 @@ void g_reglong (unsigned Flags)
                 if ((Flags & CF_UNSIGNED) == 0) {
                     L = GetLocalLabel();
                     AddCodeLine ("xfr al,al");
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
+                    AddCodeLine ("bp %s", LocalLabelName (L));
                     AddCodeLine ("dcr y");
-                    AddCodeLine ("dcr ah");
+                    AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
                 break;   
@@ -1206,9 +1212,9 @@ void g_reglong (unsigned Flags)
             if ((Flags & CF_UNSIGNED)  == 0) {
                 L = GetLocalLabel();
                 AddCodeLine ("xfr al,al");
-                AddCodeLine ("bpl %s", LocalLabelName (L));
+                AddCodeLine ("bp %s", LocalLabelName (L));
                 AddCodeLine ("dcr y");
-                AddCodeLine ("dcr ah");
+                AddCodeLine ("dcrb ah");
                 g_defcodelabel (L);
             }
             break;
@@ -1341,11 +1347,11 @@ void g_scale (unsigned flags, long val)
 
                 case CF_CHAR:
                     if (flags & CF_FORCECHAR) {
-                        if (CPU == CPU_6)
-                            AddCodeLine("slab a,%d", p2);
+                        if (CPU == CPU_6 && p2 > 2)
+                            AddCodeLine("slrb a,%d", p2);
                         else {
                             while (p2--) {
-                                AddCodeLine ("slab a");
+                                AddCodeLine ("slab");
                             }
                         }
                         break;
@@ -1353,11 +1359,11 @@ void g_scale (unsigned flags, long val)
                     /* FALLTHROUGH */
 
                 case CF_INT:
-                    if (CPU == CPU_6)
-                        AddCodeLine("sla a,%d", p2);
+                    if (CPU == CPU_6 && p2 > 2 )
+                        AddCodeLine("slr a,%d", p2);
                     else {
                         while (p2--) {
-                            AddCodeLine ("sla a");
+                            AddCodeLine ("sla");
                         }
                     }
                     break;
@@ -1393,17 +1399,17 @@ void g_scale (unsigned flags, long val)
                             AddCodeLine("rl");
                             AddCodeLine("rrr al");
                             if (CPU == CPU_6) {
-                                AddCodeLine("srl al,%d", p2 - 1);
+                                AddCodeLine("slr al,%d", p2 - 1);
                             } else {
                                 while (--p2)
-                                    AddCodeLine("lsrb");
+                                    AddCodeLine("slr al");
                             }
                         } else {
                             if (CPU == CPU_6) {
-                                AddCodeLine("srl al,%d", p2);
+                                AddCodeLine("slr al,%d", p2);
                             } else {
                                 while (p2--)
-                                    AddCodeLine ("srl al");
+                                    AddCodeLine ("slrb al");
                             }
                         }
                         break;
@@ -1561,8 +1567,8 @@ void g_addeqstatic (unsigned flags, uintptr_t label, long offs,
                 }
                 if ((flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
-                    AddCodeLine ("dcr ah");
+                    AddCodeLine ("bp %s", LocalLabelName (L));
+                    AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
                 break;
@@ -1643,13 +1649,13 @@ void g_addeqlocal (unsigned flags, int Offs, unsigned long val)
                     if (flags & CF_CONST)
                         AddCodeLine ("ldab %d", (int)(val & 0xFF));
                     AddCodeLine ("ldbb %d(%c)", Offs, r);
-                    AddCodeLine("addb b,a");
+                    AddCodeLine("addb bl,al");
                     AddCodeLine ("stab %d(%c)", Offs, r);
                 }
                 if ((flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
-                    AddCodeLine ("dcr ah");
+                    AddCodeLine ("bp %s", LocalLabelName (L));
+                    AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
                 break;
@@ -1670,7 +1676,7 @@ void g_addeqlocal (unsigned flags, int Offs, unsigned long val)
                 g_getimmed (flags, val, 0);
             }
             Offs = GenOffsetIndirect(Offs);
-            AssignX(Offs);
+            AddCodeLine("ldb %d", Offs);
             AddCodeLine ("jsr laddeqysp");
             break;
 
@@ -1753,7 +1759,7 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
                 }
                 if ((flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
+                    AddCodeLine ("bp %s", LocalLabelName (L));
                     AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
@@ -1821,12 +1827,12 @@ void g_subeqlocal (unsigned flags, int Offs, unsigned long val)
                 } else {
                     AddCodeLine ("ldbb %d(%c)", Offs, r);
                 }
-                 AddCodeLine ("subb bl,al");
+                AddCodeLine ("subb bl,al");
                 AddCodeLine ("stab %d(%c)", Offs, r);
                 if ((flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
-                    AddCodeLine ("bpl %s", LocalLabelName (L));
-                    AddCodeLine ("inrb ah");
+                    AddCodeLine ("bp %s", LocalLabelName (L));
+                    AddCodeLine ("dcrb ah");
                     g_defcodelabel (L);
                 }
                 break;
@@ -2092,11 +2098,8 @@ void g_test (unsigned flags)
             break;
 
         case CF_LONG:
-            if (flags & CF_UNSIGNED) {
-                AddCodeLine ("jsr utsteax");
-            } else {
-                AddCodeLine ("jsr tsteax");
-            }
+            AddCodeLine ("xfr y,b")
+            AddCodeLine ("ori a,b");
             break;
 
         default:
@@ -2134,9 +2137,9 @@ void g_push (unsigned flags, unsigned long val)
                     AddCodeLine("sta (-s)");
                     break;
                 case CF_LONG:
-                    AddCodeLine("sta -(s)");
+                    AddCodeLine("sta (-s)");
                     AddCodeLine("xfr y,b");
-                    AddCodeLine("stb -(s)");
+                    AddCodeLine("stb (-s)");
                     break;
                 default:
                     typeerror (flags);
@@ -2349,16 +2352,13 @@ void g_add (unsigned flags, unsigned long val)
 /* Primary = TOS + Primary */
 {
     unsigned L;
-    static const char* const ops[4] = {
-        "tosaddax", "tosaddax", "tosaddeax", "tosaddeax"
-    };
 
     if (flags & CF_CONST) {
         switch (flags & CF_TYPEMASK) {
             case CF_CHAR:
                 if (flags & CF_FORCECHAR) {
                     if (val == 1)
-                        AddCodeLine("inrb a");
+                        AddCodeLine("inrb al");
                     else {
                         AddCodeLine("ldbb %d", (unsigned char) val);
                         AddCodeLine("addb bl,al");
@@ -2383,9 +2383,15 @@ void g_add (unsigned flags, unsigned long val)
                     AddAConst(val);
                 break;
             case CF_LONG:
-                flags &= CF_CONST;
-                g_push(flags & ~CF_CONST, 0);
-                oper(flags, val, ops);
+                AddCodeLine("ldb %d", (unsigned short)(val & 0xFFFF));
+                AddCodeLine("add b,y");
+                AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                AddCodeLine("add b,a");
+                L = GetLocalLabel();
+                AddCodeLine("bnl %s", LocalLabelName(L));
+                AddCodeLine("inr y");
+                g_defcodelabel(L);
+                break;
         }
     } else {
         /* We can optimize some of these in terms of ,x */
@@ -2406,7 +2412,7 @@ void g_add (unsigned flags, unsigned long val)
             case CF_LONG:
                 AddCodeLine("ldb (-s)");
                 AddCodeLine("add b,y");
-                AddCodeLine("ldb (-s");
+                AddCodeLine("ldb (-s)");
                 AddCodeLine("add b,a");
                 L = GetLocalLabel();
                 AddCodeLine("bnl %s", LocalLabelName(L));
@@ -2415,7 +2421,6 @@ void g_add (unsigned flags, unsigned long val)
                 pop(flags);
                 return;
         }
-        oper (flags, val, ops);
     }
 }
 
@@ -2538,28 +2543,29 @@ void g_mul (unsigned flags, unsigned long val)
                             /* FIXME CPU 4 forms */
                         case 3:
                             AddCodeLine ("xab");
-                            AddCodeLine ("slab a");
+                            AddCodeLine ("slab");
                             AddCodeLine ("addb bl,al");
                             return;
 
                         case 5:
                             AddCodeLine ("xab");
-                            AddCodeLine ("slab a, 2");
+                            AddCodeLine ("slab");
+                            AddCodeLine ("slab");
                             AddCodeLine ("addb bl,al");
                             return;
 
                         case 6:
                             AddCodeLine ("xab");
-                            AddCodeLine ("slab a");
+                            AddCodeLine ("slab");
                             AddCodeLine ("addb bl,al");
-                            AddCodeLine ("slab a");
+                            AddCodeLine ("slab");
                             return;
 
                         case 7:
                             AddCodeLine ("xab");
-                            AddCodeLine ("slab a");
+                            AddCodeLine ("slab");
                             AddCodeLine ("addb bl,al");
-                            AddCodeLine ("slab a");
+                            AddCodeLine ("slab");
                             AddCodeLine ("addb bl,al");
                             return;
 
@@ -2567,7 +2573,7 @@ void g_mul (unsigned flags, unsigned long val)
                             AddCodeLine ("xab");
                             AddCodeLine ("slab a, 2");
                             AddCodeLine ("addb bl,al");
-                            AddCodeLine ("slab a");
+                            AddCodeLine ("slab");
                             return;
                     }
                 }
@@ -2578,36 +2584,38 @@ void g_mul (unsigned flags, unsigned long val)
                         /* FIXME CPU 4 forms */
                     case 3:
                         AddCodeLine ("xab");
-                        AddCodeLine ("slab a");
-                        AddCodeLine ("addb bl,al");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("add b,a");
                         return;
 
                     case 5:
                         AddCodeLine ("xab");
-                        AddCodeLine ("slab a, 2");
-                        AddCodeLine ("addb bl,al");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("add b,a");
                         return;
 
                     case 6:
                         AddCodeLine ("xab");
-                        AddCodeLine ("slab a");
-                        AddCodeLine ("addb bl,al");
-                        AddCodeLine ("slab a");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("add b,a");
+                        AddCodeLine ("sla");
                         return;
 
                     case 7:
                         AddCodeLine ("xab");
-                        AddCodeLine ("slab a");
-                        AddCodeLine ("addb bl,al");
-                        AddCodeLine ("slab a");
-                        AddCodeLine ("addb bl,al");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("add b,a");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("add b,a");
                         return;
 
                     case 10:
                         AddCodeLine ("xab");
-                        AddCodeLine ("slab a, 2");
-                        AddCodeLine ("addb bl,al");
-                        AddCodeLine ("slab a");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("sla");
+                        AddCodeLine ("add b,a");
+                        AddCodeLine ("sla");
                         return;
                 }
                 break;
@@ -2688,10 +2696,6 @@ void g_mod (unsigned flags, unsigned long val)
 void g_or_ops (char *op, unsigned flags, unsigned long val)
 /* Primary = TOS | Primary */
 {
-    static const char* const ops[4] = {
-        "tosorax", "tosorax", "tosoreax", "tosoreax"
-    };
-
     /* If the right hand side is const, the lhs is not on stack but still
     ** in the primary register.
     */
@@ -2757,8 +2761,6 @@ void g_or_ops (char *op, unsigned flags, unsigned long val)
             pop(flags);
             return;
     }
-    /* Use long way over the stack */
-    oper (flags, val, ops);
 }
 
 void g_or(unsigned flags, unsigned long val)
@@ -2811,7 +2813,7 @@ void g_and (unsigned Flags, unsigned long Val)
             case CF_LONG:
                 GenerateAnd("a", Val & 0xFFFF);
                 GenerateAnd("y", Val >> 16);
-                break;
+                return;
 
             default:
                 typeerror (Flags);
@@ -2865,8 +2867,10 @@ void g_asr (unsigned flags, unsigned long val)
                     LsrABy(val);
                     return;
                 }
-                /* TODO: CPU4 */
-                AddCodeLine("sra a, %d", (unsigned short)(val & 15));
+                if (CPU == CPU_6 && val > 2)
+                    AddCodeLine("srr a,%d", (unsigned short)(val & 15));
+                else while(val--)
+                    AddCodeLine("sra");
                 return;
 
             case CF_LONG:
@@ -2879,16 +2883,16 @@ void g_asr (unsigned flags, unsigned long val)
                     AddCodeLine ("orib al,al");
                     if ((flags & CF_UNSIGNED) == 0) {
                         unsigned L = GetLocalLabel();
-                        AddCodeLine ("bpl %s", LocalLabelName (L));
+                        AddCodeLine ("bp %s", LocalLabelName (L));
                         AddCodeLine ("dcr y");
-                        AddCodeLine ("dcr ah");
+                        AddCodeLine ("dcrb ah");
                         g_defcodelabel (L);
                     }
                     /* FIXME: ideally we want a byte LsrALBy */
                     if (flags & CF_UNSIGNED)
                         LsrABy(val - 24);
                     else
-                        AddCodeLine("srab al, %d", (unsigned short)(val - 24));
+                        AddCodeLine("srrb al, %d", (unsigned short)(val - 24));
                     return;
                 }
                 if (val >= 16) {
@@ -2897,15 +2901,17 @@ void g_asr (unsigned flags, unsigned long val)
                     AddCodeLine("ori a,a");
                     if ((flags & CF_UNSIGNED) == 0) {
                         unsigned L = GetLocalLabel();
-                        AddCodeLine ("bpl %s", LocalLabelName (L));
+                        AddCodeLine ("bp %s", LocalLabelName (L));
                         AddCodeLine ("dcr y");
                         g_defcodelabel (L);
                     }
                     val -= 16;
+                    if (val == 0)
+                        return;
                     if (flags & CF_UNSIGNED)
-                        LsrABy(val - 16);
+                        LsrABy(val);
                     else
-                        AddCodeLine("sra a, %d", (unsigned short)(val - 16));
+                        AddCodeLine("srr a, %d", (unsigned short)val);
                     return;
                 }
                 if (val >= 8) {
@@ -3111,10 +3117,10 @@ void g_inc (unsigned flags, unsigned long val)
         case CF_CHAR:
             if (flags & CF_FORCECHAR) {
                 if (val == 1)
-                    AddCodeLine("inrb a");
+                    AddCodeLine("inrb al");
                 else {
-                    AddCodeLine("ldb %d", (unsigned char)val);
-                    AddCodeLine("add b,a");
+                    AddCodeLine("ldbb %d", (unsigned char)val);
+                    AddCodeLine("addb bl,al");
                 }
                 break;
             }
@@ -3143,7 +3149,7 @@ void g_inc (unsigned flags, unsigned long val)
             AddCodeLine("ldb %d", (unsigned short)(val & 0xFFFF));
             AddCodeLine("add b,a");
             Label = GetLocalLabel();
-            AddCodeLine("bpl %s", LocalLabelName (Label));
+            AddCodeLine("bp %s", LocalLabelName (Label));
             AddCodeLine("inr y");
             g_defcodelabel (Label);
             break;
@@ -3216,10 +3222,7 @@ void g_dec (unsigned flags, unsigned long val)
 void g_eq (unsigned flags, unsigned long val)
 /* Test for equal */
 {
-    static const char* const ops[4] = {
-        "toseqax", "toseqax", "toseqeax", "toseqeax"
-    };
-
+    unsigned L;
 
     /* OPTIMIZE look at x for NULL case only */
     /* If the right hand side is const, the lhs is not on stack but still
@@ -3252,19 +3255,19 @@ void g_eq (unsigned flags, unsigned long val)
                 return;
 
             case CF_LONG:
-                /* FIXME: this one is doable easily enough */
-                break;
+                L = GetLocalLabel();
+                AddCodeLine("ldb %d", (unsigned short)(val & 0xFFFF));
+                AddCodeLine("sab");
+                AddCodeLine("jnz %s", LocalLabelName(L));
+                AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                AddCodeLine("sab");
+                g_defcodelabel(L);
+                AddCodeLine("jsr booleq");
+                return;
 
             default:
                 typeerror (flags);
         }
-
-        /* If we go here, we didn't emit code. Push the lhs on stack and fall
-        ** into the normal, non-optimized stuff. Note: The standard stuff will
-        ** always work with ints.
-        */
-        flags &= ~CF_FORCECHAR;
-        g_push (flags & ~CF_CONST, 0);
     }
     switch (flags & CF_TYPEMASK) {
         case CF_CHAR:
@@ -3279,11 +3282,19 @@ void g_eq (unsigned flags, unsigned long val)
         case CF_INT:
             AddCodeLine("ldb (-s)");
             AddCodeLine("sab");
+            AddCodeLine ("jsr booleq");
             pop(flags);
-            break;
+            return;
+        case CF_LONG:
+            AddCodeLine("ldb (-s)");
+            AddCodeLine("sab");
+            AddCodeLine("tfr b,x");
+            AddCodeLine("ldb (-s)");
+            AddCodeLine("sub y,b");
+            AddCodeLine("ori x,b");
+            AddCodeLine("jsr booleq");
+            return;
     }
-    /* Use long way over the stack */
-    oper (flags, val, ops);
 }
 
 
@@ -3427,26 +3438,26 @@ void g_lt (unsigned flags, unsigned long val)
 
                 case CF_CHAR:
                     if (flags & CF_FORCECHAR) {
-                        AddCodeLine ("srlb al");          /* Bit 7 -> carry */
+                        AddCodeLine ("slrb al");          /* Bit 7 -> carry */
                         AssignA(0, 1);
-                        AddCodeLine ("rrlb al");	 /* 0 or 1 */
+                        AddCodeLine ("rlrb al");	 /* 0 or 1 */
                         return;
                     }
                     /* FALLTHROUGH */
 
                 case CF_INT:
                     /* Just check the high byte */
-                    AddCodeLine ("srl a");           /* Bit 15 -> carry */
+                    AddCodeLine ("slrb ah");           /* Bit 15 -> carry */
                     AssignA(0, 1);
-                    AddCodeLine ("rrlb al");
+                    AddCodeLine ("rlrb al");
                     return;
 
                 case CF_LONG:
                     /* Just check the high byte */
                     AddCodeLine ("xfr y,a");
-                    AddCodeLine ("srl a");
+                    AddCodeLine ("slrb ah");
                     AssignA(0, 1);
-                    AddCodeLine ("rrlb al");
+                    AddCodeLine ("rlrb al");
                     return;
 
                 default:
@@ -3811,6 +3822,7 @@ void g_gt (unsigned flags, unsigned long val)
 void g_ge (unsigned flags, unsigned long val)
 /* Test for greater than or equal to */
 {
+    unsigned L;
     static const char* const ops[4] = {
         "tosgeax", "tosugeax", "tosgeeax", "tosugeeax"
     };
@@ -3856,13 +3868,13 @@ void g_ge (unsigned flags, unsigned long val)
                     return;
 
                 case CF_LONG:
-                    /* FIXME: TODO */
-                    /* Do a subtraction. Condition is true if carry clear */
-                    SubAConst(val);
-                    AddCodeLine ("ldab @sreg");
-                    AddCodeLine ("sbcb #$%02X", (unsigned char)(val >> 16));
-                    AddCodeLine ("ldab @sreg+1");
-                    AddCodeLine ("sbcb #$%02X", (unsigned char)(val >> 24));
+                    L = GetLocalLabel();
+                    AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                    AddCodeLine("sab");
+                    AddCodeLine("bnz %s", LocalLabelName(L));
+                    AddCodeLine("ldb %d", (unsigned short)(val & 0xFFFF));
+                    AddCodeLine("sab");
+                    g_defcodelabel(L);
                     AddCodeLine ("jsr booluge");
                     return;
 
@@ -3877,25 +3889,25 @@ void g_ge (unsigned flags, unsigned long val)
 
                 case CF_CHAR:
                     if (flags & CF_FORCECHAR) {
-                        AddCodeLine ("srlb al");
+                        AddCodeLine ("slrb al");
                         AddCodeLine ("ldab 0");
-                        AddCodeLine ("rrlb al");
+                        AddCodeLine ("rlrb al");
                         return;
                     }
                     /* FALLTHROUGH */
 
                 case CF_INT:
                     /* Just test the high byte */
-                    AddCodeLine ("srlb ah");
+                    AddCodeLine ("slrb ah");
                     AssignA(0, 1);
-                    AddCodeLine ("rrlb al");
+                    AddCodeLine ("rlrb al");
                     return;
 
                 case CF_LONG:
                     AddCodeLine ("xfr y,b");
-                    AddCodeLine ("srlb bh");
+                    AddCodeLine ("slrb bh");
                     AssignA(0, 1);
-                    AddCodeLine ("rrlb al");
+                    AddCodeLine ("rlrb al");
                     return;
 
                 default:
@@ -4068,7 +4080,7 @@ void g_zerobytes (unsigned Count)
 /* Output Count bytes of data initialized with zero */
 {
     if (Count > 0) {
-        AddDataLine ("\t.blkb\t%u", Count);
+        AddDataLine ("\t.ds\t%u", Count);
     }
 }
 

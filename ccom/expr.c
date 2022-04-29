@@ -122,6 +122,7 @@ void ExprWithCheck (void (*Func) (ExprDesc*), ExprDesc* Expr)
             Error ("Code generation messed up: "
                    "StackPtr is %d, should be %d",
                    StackPtr, OldSP);
+            AddCodeLine("; Bad stackptr %d %d\n", StackPtr, OldSP);
         } else {
             Internal ("Code generation messed up: "
                       "StackPtr is %d, should be %d",

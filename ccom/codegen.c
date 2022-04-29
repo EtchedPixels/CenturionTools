@@ -2098,7 +2098,7 @@ void g_test (unsigned flags)
             break;
 
         case CF_LONG:
-            AddCodeLine ("xfr y,b")
+            AddCodeLine ("xfr y,b");
             AddCodeLine ("ori a,b");
             break;
 

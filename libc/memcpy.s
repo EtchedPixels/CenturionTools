@@ -4,17 +4,17 @@
 		.code
 
 _memcpy:
-		ld	a,2(s)
-		mov	y,a
-		ld	a,4(s)
-		mov	z,a
-		ld	b,6(s)
+		lda	2(s)
+		xay
+		lda	4(s)
+		xaz
+		lda	6(s)
 		bz	nowork
 memcpyl:
-		ld	a,(z+)
-		st	a,(y+)
-		dec	b
+		ldb	(z+)
+		stb	(y+)
+		dca
 		bnz	memcpyl
-		ld	a,2(s)
+		lda	2(s)
 nowork:
-		ret
+		rsr

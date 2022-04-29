@@ -4,12 +4,11 @@
 
 _strlen:
 		clr	y
-		ld	a,2(s)
-sl:		ld	b,(a+)
+		lda	2(s)
+sl:		ldb	(a+)
 		bz	strlen_done
-		inc	y
-		jump	sl
+		inr	y
+		bra	sl
 strlen_done:
-		mov	a,y
-		ret
-
+		xfr	y,a
+		rsr

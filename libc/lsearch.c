@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void *lfind(const void *key, const void *base,
+void *lfind(void *key, void *base,
 	    size_t *num, size_t size,
 	    int (*cmp)(const void *,const void *))
 {
@@ -26,7 +26,7 @@ void *lfind(const void *key, const void *base,
    return NULL;
 }
 
-void *lsearch(const void *key, void *base,
+void *lsearch(const void *key, const void *base,
 	      size_t *num, size_t size,
 	      int (*cmp)(const void *, const void *))
 {

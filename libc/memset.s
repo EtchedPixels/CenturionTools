@@ -7,16 +7,16 @@
 ;
 ;
 _memset:
-		ld	a,2(s)
-		mov	y,a
-		ld	a,4(s)
-		ld	b,6(s)
+		lda	2(s)
+		xay
+		ldb	4(s)
+		lda	6(s)
 		jz	nowork
 
 setl:
-		st	al,(y+)
-		dec	b
+		stbb	(y+)
+		dca
 		jnz	setl
 nowork:
-		ld	a,2(s)
-		ret
+		lda	2(s)
+		rsr

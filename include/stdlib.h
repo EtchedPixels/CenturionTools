@@ -58,7 +58,7 @@ typedef int (*cmp_func_t)(const void *__a, const void *__b);
 extern int _bsearch;
 extern void *bsearch(void *__key, void *__base, size_t __num, size_t __size, cmp_func_t __cmp);
 extern void *lfind(void *__key, void *__base, size_t *__num, size_t __size, cmp_func_t __cmp);
-extern void *lsearch(void *__key, void *__base, size_t *__num, size_t __size, cmp_func_t __cmp);
+extern void *lsearch(const void *__key, const void *__base, size_t *__num, size_t __size, cmp_func_t __cmp);
 extern void *_qbuf;
 extern void qsort(void *__base, size_t __num, size_t __size, cmp_func_t __cmp);
 
@@ -73,5 +73,8 @@ extern unsigned long mrand48(void);
 extern long nrand48(unsigned short __xsubi[3]);
 extern unsigned short *seed48(unsigned short __seed16v[3]);
 extern void srand48(long __sedval);
+
+/* Target provided */
+extern void _exit(int __status);
 
 #endif /* __STDLIB_H */

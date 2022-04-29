@@ -153,4 +153,7 @@ extern char *l64a(long __value);
 extern void perror(const char *__s);
 extern int rename(const char *__oldname, const char *__newname);
 
+/* Helpers from target */
+extern int isatty(int __fd);
+
 #endif /* __STDIO_H */

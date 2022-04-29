@@ -430,23 +430,38 @@ loop:
 		force8 = 1;
 	case TREGA:
 		getaddr(&a1);
+		c = getnb();
+		if (c == ',') {
+			getaddr(&a2);
+			constify(&a2);
+			istuser(&a2);
+			if (a2.a_value < 1 || a2.a_value > 16)
+				aerr(RANGE);
+			/* Adjust value */
+			a2.a_value--;
+			disp = 1;
+		} else {
+			disp = 0;
+			unget(c);
+			a2.a_value = 0;
+		}
 		switch (a1.a_type & TMMODE) {
 		case TWR:
 			if (force8)
 				aerr(BREGONLY);
-			if ((a1.a_type & TMREG)  == RA)
+			if ((a1.a_type & TMREG)  == RA && !disp)
 				outab(opcode | 0x18);
 			else {
 				outab(opcode | 0x10);
-				outab((a1.a_type & TMREG) << 4);
+				outab(a2.a_value | ((a1.a_type & TMREG) << 4));
 			}
 			break;
 		case TBR:
-			if ((a1.a_type & TMREG)  == RAL)
+			if ((a1.a_type & TMREG)  == RAL && !disp)
 				outab(opcode | 0x8);
 			else {
 				outab(opcode);
-				outab((a1.a_type & TMREG) << 4);
+				outab(a2.a_value | ((a1.a_type & TMREG) << 4));
 			}
 			break;
 		default:
@@ -458,16 +473,29 @@ loop:
 		force8 = 1;
 	case TREG:
 		getaddr(&a1);
+		c = getnb();
+		if (c == ',') {
+			getaddr(&a2);
+			constify(&a2);
+			istuser(&a2);
+			if (a2.a_value < 1 || a2.a_value > 16)
+				aerr(RANGE);
+			/* Adjust value */
+			a2.a_value--;
+		} else {
+			unget(c);
+			a2.a_value = 0;
+		}
 		switch (a1.a_type & TMMODE) {
 		case TWR:
 			if (force8)
 				aerr(BREGONLY);
 			outab(opcode | 0x10);
-			outab((a1.a_type & TMREG) << 4);
+			outab(a2.a_value | ((a1.a_type & TMREG) << 4));
 			break;
 		case TBR:
 			outab(opcode);
-			outab((a1.a_type & TMREG) << 4);
+			outab(a2.a_value | ((a1.a_type & TMREG) << 4));
 			break;
 		default:
 			aerr(REGONLY);

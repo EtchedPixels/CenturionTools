@@ -5,69 +5,70 @@
 ;
 
 		.export tosdiveax
-		.setcpu 6803
+		.setcpu 4
 		.code
 
 tosdiveax:
-		; make work room
-		psha
-		clr @tmp4		; sign tracking
-		ldaa @sreg
-		bpl nosignfix
-		pula
-		jsr negeax
-		inc @tmp4		; remember how many negations
-		bra signfixed
-nosignfix:
-		pula
+		stx	(-s)
+		clr	x
+		xfr	y,y
+		bp	signfixed
+		inx			; track sign toggle
+		; negate ya
+		iva
+		ivr	y
+		ina
+		bnz	signfixed
+		inr	y
 signfixed:
 		; Stack the 32bit working register
 		; Arrange stack for the divide helper. TOS is already right
 		; so push the other 4 bytes we need. The divide helper knows
 		; about the fact there is junk (return address) between the
 		; two
-		pshb
-		psha
-		ldx @sreg
-		pshx
-		;
-		;	Sign rules
-		;
-		tsx
-		ldaa 6,x		; sign of TOS
-		bpl nosignfix2
-		inc @tmp4
-		ldd 8,x
-		subd #1
-		std 8,x
-		ldd 6,x
-		sbcb #0
-		sbca #0
-		coma
-		comb
-		std 6,x
-		com 8,x
-		com 9,x
-nosignfix2:
-		tsx
+		sta	(-s)
+		xfr	y,a
+		sta	(-s)
+
+		sta	(-s)
+		ldb	10(s)		; top of TOS
+		bp	signfixed2
+		lda	12(s)		; rest of argument
+		iva
+		ivr	b
+		ina
+		bnz	noripple
+		inr	b
+noripple:
+		stb	10(s)
+		sta	12(s)
+		dcx
+signfixed2:
+		lda	(s+)
+		;	Do a 32bit unsigned divide
 		jsr div32x32
-		; We now have the positive result. Bit 0 of @tmp4 tells us
-		; if we need to negate the answer
-		ldab @tmp4
-		andb #1
-		beq nosignfix3
-		ldd 6,x
-		std @sreg
-		ldd 8,x
-		jsr negeax
-		pulx
-		pulx
-		jmp pop4
+		ldb	(s+)
+		ldb	(s+)
+		;	Result is now in TOS from before our call
+		ori	x,x
+		bz	nosignfix3
+		lda	8(s)
+		xay
+		lda	10(s)
+		iva
+		ivr	y
+		ina
+		bnz	noripple2
+		inr	y
+noripple2:
+		ldx	(s+)
+		ldb	(s+)
+		ldb	(s+)
+		rsr
+
 nosignfix3:
-		ldd 6,x
-		std @sreg
-		ldd 8,x
-		pulx
-		pulx
-		jmp pop4
+		lda	8(s)
+		xay
+		lda	10(s)
+		bra	noripple2
 

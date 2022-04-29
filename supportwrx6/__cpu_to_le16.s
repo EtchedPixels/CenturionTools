@@ -4,7 +4,7 @@
 	.export __be16_to_cpu
 	.export __cpu_to_be16
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 __cpu_to_le16:

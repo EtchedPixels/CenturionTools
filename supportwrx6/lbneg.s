@@ -3,7 +3,7 @@
 ;
 	.export bnegeax
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 bnegeax:

@@ -4,7 +4,7 @@
 	.export tosshlax		; unsigned
 	.export tosaslax		; signed
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 tosaslax:				; negative shift is not defined

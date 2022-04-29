@@ -20,11 +20,13 @@
 ;
 
 DIVIS		.equ	6
-;		In between is a pushed rt - it's easier to just leave
-;		the gap
+;
+;	There is a gap between these two so the call can push x and the
+;	helper save its own x
+;
 DIVID		.equ	12
 
-		.setcpu 6
+		.setcpu 4
 
 		.export div32x32
 		.code
@@ -99,7 +101,7 @@ done:
 		; save an instruction here. Worry about this once it's
 		; debugged
 		xfr	y,a
-		xfr	z,b
+		xfr	z,y
 
 		ldx	(s+)
 		xfr	x,z

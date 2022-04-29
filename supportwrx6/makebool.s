@@ -1,4 +1,4 @@
-	.setcpu 6
+	.setcpu 4
 	.code
 
 	.export booleq

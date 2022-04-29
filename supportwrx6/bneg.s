@@ -1,7 +1,7 @@
 ;
 ;	Boolean negation
 ;
-	.setcpu 6
+	.setcpu 4
 
 	.code
 

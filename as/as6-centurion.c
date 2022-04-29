@@ -76,7 +76,7 @@ SYM	sym[] = {
 	{	0,	"elo",		TIMPL,		0x0C	},
 	{	0,	"pcx",		TIMPL,		0x0D	},
 	{	0,	"dly",		TIMPL,		0x0E	},
-	{	0,	"sysret",	TIMPL,		0x0F	},
+	{	0,	"sysret",	TIMPL6,		0x0F	},
 
 	/* 0x1X		:	Branches */
 #if 0
@@ -210,7 +210,7 @@ SYM	sym[] = {
 	/* 0x7X		:	Calls and other */
 	{	0,	"jmp",		TJUMP,		0x70	},
 	{	0,	"jsr",		TJUMP,		0x78	},
-	{	0,	"syscall",	TIMPL,		0x76	},
+	{	0,	"syscall",	TIMPL6,		0x76	},
 	
 	/* 0x8x-0xFF	:	A and B load/store */
 
@@ -281,6 +281,7 @@ char *etext[] = {
 	"Invalid addressing mode",	/* 35 */
 	"Out of range",			/* 36 */
 	"A register only",		/* 37 */
+	"Not available on CPU4",	/* 38 */
 };
 
 /*

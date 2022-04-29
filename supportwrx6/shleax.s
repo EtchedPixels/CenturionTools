@@ -11,7 +11,7 @@
 	.export asleax3
 	.export asleax4
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 shleax4:

@@ -3,7 +3,7 @@
 ;
 	.export negeax
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 negeax:

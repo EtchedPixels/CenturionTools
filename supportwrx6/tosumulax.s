@@ -6,26 +6,31 @@
 ;
 		.export tosmulax
 		.export tosumulax
+
+		.setcpu 4
+
 		.code
 tosmulax:
 tosumulax:
 		stx	(-s)
-		sty	(-s)
+		xfr	y,x
+		stx	(-s)
 
 		clr	y		; Work register
 		ldb	6(s)		; Going to do A * B
 		ldx	32		; counter
 		; Rotate through the number
 nextbit:
-		srl	a
+		slr	a
 		bnl	noadd
 		add	b,y
-noadd:		sll	b
-		dcrb	x
+noadd:		slr	b
+		dcrb	xl
 		bnz	nextbit
 		; BA is now the result
 
-		ldy	(s+)
+		ldx	(s+)
+		xfr	x,y
 		ldx	(s+)
 		; Throw away a word
 		inr	s

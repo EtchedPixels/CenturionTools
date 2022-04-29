@@ -419,6 +419,9 @@ loop:
 		}
 		break;
 	/* Implicit one or two byte operation */
+	case TIMPL6:
+		if (cpu_model <= 4)
+			aerr(BADCPU);
 	case TIMPL:
 		if (opcode > 0x0100)
 			outab(opcode >> 8);
@@ -440,6 +443,8 @@ loop:
 			/* Adjust value */
 			a2.a_value--;
 			disp = 1;
+			if (cpu_model <= 4)
+				aerr(BADCPU);
 		} else {
 			disp = 0;
 			unget(c);
@@ -482,6 +487,8 @@ loop:
 				aerr(RANGE);
 			/* Adjust value */
 			a2.a_value--;
+			if (cpu_model <= 4)
+				aerr(BADCPU);
 		} else {
 			unget(c);
 			a2.a_value = 0;
@@ -568,9 +575,13 @@ loop:
 		}
 		break;
 	case TMMU:
+		if (cpu_model <= 4)
+			aerr(BADCPU);
 		/* TODO */
 		break;
 	case TDMA:
+		if (cpu_model <= 4)
+			aerr(BADCPU);
 		/* regpair merged into top of lower byte */
 		getaddr(&a1);
 		if ((a1.a_type & TMMODE) != TWR) {
@@ -581,6 +592,8 @@ loop:
 		outab(opcode | ((a1.a_type & TMREG) << 4));
 		break;
 	case TDMAM:
+		if (cpu_model <= 4)
+			aerr(BADCPU);
 		/* DMA mode it's a value not a register encoding */
 		getaddr(&a1);
 		istuser(&a1);

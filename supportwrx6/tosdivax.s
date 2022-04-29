@@ -13,7 +13,7 @@
 	.export tosdivax
 	.export tosmodax
 
-	.setcpu 6
+	.setcpu 4
 
 ;
 ;	The sign of the remainder of a division is not defined until C99.
@@ -33,7 +33,7 @@ plusmod:
 	bp	plusmod2
 	iva
 	ina
-	dex			; track sign
+	dcx			; track sign
 plusmod2:
 	jsr div16x16		; do the unsigned divide
 				; X = quotient, B remainder

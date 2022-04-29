@@ -5,7 +5,7 @@
 	.export tosudivax
 	.export tosumodax
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 tosudivax:

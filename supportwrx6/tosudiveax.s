@@ -3,7 +3,7 @@
 ;
 
 		.export tosudiveax
-		.setcpu 6803
+		.setcpu 4
 		.code
 
 tosudiveax:
@@ -11,17 +11,19 @@ tosudiveax:
 		; so push the other 4 bytes we need. The divide helper knows
 		; about the fact there is junk (return address) between the
 		; two
-		ldx @sreg
-		pshb
-		psha
-		pshx
-		tsx
-		jsr div32x32
+		stx	(-s)
+		sta	(-s)
+		xfr	y,a
+		sta	(-s)
+		jsr	div32x32
+		ldb	(s+)		; Clean up stack arg
+		ldb	(s+)
 		; Extract the result
-		ldd 6,x
-		std @sreg
-		ldd 8,x
+		lda	6(s)
+		xay
+		lda	8(s)
 		; Fix up the stack
-		pulx
-		pulx
-		jmp pop4
+		ldx	(s+)
+		ldb	(s+)
+		ldb	(s+)
+		rsr

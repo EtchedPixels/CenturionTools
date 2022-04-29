@@ -19,7 +19,7 @@
 ;
 ;
 	.export div16x16
-	.setcpu 6
+	.setcpu 4
 
 	.code
 

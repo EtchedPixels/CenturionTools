@@ -5,7 +5,7 @@
 	.export laddeqysp
 	.export laddeq
 
-	.setcpu 6
+	.setcpu 4
 
 ; In this form B is the stack offset. Turn that into a pointer and
 ; fall into the static form

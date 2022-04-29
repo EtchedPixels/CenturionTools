@@ -4,7 +4,7 @@
 	.code
 	.export lsubeq
 	.export lsubeqysp
-	.setcpu 6
+	.setcpu 4
 
 ; In this form B is the stack offset. Turn that into B is a pointer and
 ; fall into the static form

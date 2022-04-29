@@ -5,7 +5,7 @@
 ;
 		.export tosumuleax
 		.export tosmuleax
-		.setcpu 6
+		.setcpu 4
 
 		.code
 ;

@@ -1,7 +1,7 @@
 ;
 ;	Complement the 32bit working register
 ;
-	.setcpu 6
+	.setcpu 4
 	.export compleax
 
 	.code

@@ -1157,6 +1157,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define TSTOREEW 0x2700
 #define TSTOREX 0x2800
 #define	TSETCPU	0x2900			/* setcpu */
+#define TIMPL6	0x2A00			/* Not present on CPU4 */
 
 /*
  * Registers.
@@ -1226,6 +1227,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define BADADDR		35
 #define RANGE		36
 #define AREGONLY	37
+#define BADCPU		38
 
 #else
 #error "Unknown target"

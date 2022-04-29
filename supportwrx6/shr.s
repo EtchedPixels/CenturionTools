@@ -4,7 +4,7 @@
 
 	.export tosshrax
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 tosshrax:

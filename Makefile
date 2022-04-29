@@ -1,6 +1,6 @@
 .PHONY:	aswrx6 ldwrx ccom copt
 
-all: 	ccwrx6 aswrx6 ldwrx6 ccom copt crt0.o libc.a
+all: 	ccwrx6 aswrx6 ldwrx6 ccom copt crt0.o libc.a libwrx6.a
 
 aswrx6:
 	(cd as; make)
@@ -184,5 +184,5 @@ clean:
 	(cd ld; make clean)
 	(cd common; make clean)
 	(cd ccom; make clean)
-	rm -f $(COBJ) $(STDIO)
-	rm *~
+	rm -f $(COBJ) $(STDIO) $(SUPPORT)
+	rm -f *~ */*~

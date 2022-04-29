@@ -3,7 +3,7 @@
 ;
 	.export asreax8
 
-	.setcpu 6
+	.setcpu 4
 
 	.code
 

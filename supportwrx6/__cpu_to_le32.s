@@ -4,7 +4,7 @@
 	.export __be32_to_cpu
 	.export __cpu_to_be32
 
-	.setcpu 6
+	.setcpu 4
 	.code
 
 __cpu_to_le32:

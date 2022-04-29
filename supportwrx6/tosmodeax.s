@@ -1,66 +1,63 @@
 ;
-;	Signed 32bit remainder TOS by sreg:d
+;	Signed 32bit mod TOS by YA
 ;
-;	C99 says that the sign of the remainder shall be the sign of the
-;	dividend, older C says nothing but it seems unwise to do other
-;	things
+;	The result shall be negative if the dividend was
 ;
-
 		.export tosmodeax
-		.setcpu 6803
+
+		.setcpu 4
 		.code
 
 tosmodeax:
-		; make working space
-		psha
+		stx	(-s)
+		clr	x
+		xfr	y,y
+		bp	signfixed
+		; negate ya
+		iva
+		ivr	y
+		ina
+		bnz	signfixed
+		inr	y
+signfixed:
+		; Stack the 32bit working register
 		; Arrange stack for the divide helper. TOS is already right
 		; so push the other 4 bytes we need. The divide helper knows
 		; about the fact there is junk (return address) between the
 		; two
-		ldaa @sreg
-		staa @tmp4
-		bpl nosignfix
-		jsr negeax
-nosignfix:
-		pula
-		pshb
-		psha
-		ldx @sreg
-		pshx
-		;
-		;	Sign rules
-		;
-		tsx
-		ldaa 6,x	; sign of TOS
-		bpl nosignfix2
-		ldd 8,x
-		subd #1
-		std 8,x
-		ldd 6,x
-		sbcb #0
-		sbca #0
-		coma
-		comb
-		std 6,x
-		com 8,x
-		com 9,x
-nosignfix2:
-		tsx
+		sta	(-s)
+		xfr	y,a
+		sta	(-s)
+
+		ldb	8(s)		; top of TOS
+		bp	signfixed2
+
+		ldx	10(s)		; rest of argument
+		ivr	x
+		ivr	b
+		inx
+		bnz	noripple
+		inr	b
+		ldx	1
+noripple:
+		stb	8(s)
+		stx	10(s)
+signfixed2:
+		;	Do a 32bit unsigned divide
 		jsr div32x32
-		pulx
-		pulx
-		;
-		;	At this point @tmp2/@tmp3 hold the positive signed
-		;	dividend
-		;
-		ldd @tmp2
-		std @sreg
-		ldaa @tmp4
-		bita #0x80		; check if negative dividend
-		beq nonega
-		ldd @tmp3
-		jsr negeax
-		jmp pop4
-nonega:
-		ldd @tmp3
-		jmp pop4
+		ldb	(s+)
+		ldb	(s+)
+		;	Result is now in YA
+		ori	x,x
+		bz	nosignfix3
+		iva
+		ivr	y
+		ina
+		bnz	noripple2
+		inr	y
+noripple2:
+nosignfix3:
+		ldx	(s+)
+		ldb	(s+)
+		ldb	(s+)
+		rsr

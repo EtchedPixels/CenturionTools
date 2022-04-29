@@ -3,23 +3,20 @@
 ;
 
 		.export tosumodeax
-		.setcpu 6803
+		.setcpu 4
 		.code
 
 tosumodeax:
-		; Arrange stack for the divide helper. TOS is already right
-		; so push the other 4 bytes we need. The divide helper knows
-		; about the fact there is junk (return address) between the
-		; two
-		ldx @sreg
-		pshb
-		psha
-		pshx
-		tsx
+		; Arrange stack for the divide helper.
+		stx	(-s)
+		sta	(-s)
+		xfr	y,a
+		sta	(-s)
 		jsr div32x32
-		pulx
-		pulx
-		ldd @tmp2
-		std @sreg
-		ldd @tmp3
-		jmp pop4
+		; Result is in YA
+		ldb	(s+)	; throw the stuff we stacked
+		ldb	(s+)
+		ldx	(s+)	; Get our X back
+		ldb	(s+)	; Throw away two
+		ldb	(s+)
+		rsr

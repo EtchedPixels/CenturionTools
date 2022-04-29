@@ -1,8 +1,18 @@
-all: 	ccwrx6
+.PHONY:	aswrx6 ldwrx ccom copt
+
+all: 	ccwrx6 aswrx6 ldwrx6 ccom copt crt0.o libc.a
+
+aswrx6:
 	(cd as; make)
+
+ldwrx6:
 	(cd ld; make)
+
+ccom:
 	(cd common; make)
 	(cd ccom; make)
+
+copt:
 	(cd copt; make)
 
 install:
@@ -13,6 +23,11 @@ install:
 	(cd ld; make install)
 	cp ccwrx6 /opt/aswrx6/bin/
 	cp -r include/* /opt/aswrx6/include/
+	cp ccom/ccwrx /opt/aswrx6/lib/ccwrx
+	cp copt/copt /opt/aswrx6/lib/copt
+	cp ccwrx.rules /opt/aswrx6/lib/
+	cp crt0.o /opt/aswrx6/lib/
+	cp libc.a /opt/aswrx6/lib/
 
 ccwrx6: ccwrx6.c
 	gcc -Wall -pedantic -O2 ccwrx6.c -o ccwrx6
@@ -121,14 +136,17 @@ STDIO =	stdio/fclose.o \
 	stdio/vscanf.o \
 	stdio/vsscanf.o
 
+crt0.o: aswrx6 crt0.s
+	aswrx6 crt0.s
+
 libc.a:	ccwrx6 $(STDIO) $(COBJ)
 	ar rc libc.a $(STDIO) $(COBJ) $(AOBJ)
 
+%.o: %.c
+	./ccwrx6 -Iinclude -c $^
+
 %.o: %.s
 	aswrx6 $^
-
-%.o: %.c
-	./ccwrx6 -X -Iinclude -c $^
 
 clean:
 	(cd as; make clean)

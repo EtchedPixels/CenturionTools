@@ -154,7 +154,7 @@ SYM	sym[] = {
 	{	0,	"sla",		TIMPL,		0x3D	},
 	{	0,	"slab",		TIMPL,		0x2D	},
 	{	0,	"inx",		TIMPL,		0x3E	},
-	{	0,	"dex",		TIMPL,		0x3F	},
+	{	0,	"dcx",		TIMPL,		0x3F	},
 
 	/* 0x2E/F	:	Special */
 

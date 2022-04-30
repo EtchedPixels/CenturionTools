@@ -301,6 +301,8 @@ static void LsrABy(int n)
 
 static void AslABy(int n)
 {
+    if (n == 0)
+        return;
     if (n > 15) {
         AssignA(0, 0);
         return;
@@ -752,10 +754,10 @@ void g_getstatic (unsigned flags, uintptr_t label, long offs)
                so flag them as not happening and let the caller try again
                via D */
             if ((flags & CF_FORCECHAR) || (flags & CF_TEST)) {
-                AddCodeLine ("ldal (%s)", lbuf);   /* load A from the label */
+                AddCodeLine ("ldab (%s)", lbuf);   /* load A from the label */
             } else {
                 AddCodeLine ("clrb ah");
-                AddCodeLine ("ldal (%s)", lbuf);   /* load A from the label */
+                AddCodeLine ("ldab (%s)", lbuf);   /* load A from the label */
                 if (!(flags & CF_UNSIGNED)) {
                     /* Must sign extend */
                     unsigned L = GetLocalLabel ();
@@ -850,7 +852,6 @@ void g_getlocal_x (unsigned Flags, int Offs)
             break;
         case CF_LONG:
             LoadAVia(r, Offs);
-            StoreA ("@sreg", 0);
             AddCodeLine ("ldx %d(%c)", Offs + 2, r);
             break;
 
@@ -1098,7 +1099,7 @@ void g_toslong (unsigned flags)
                 /* need to sign extend */
                 unsigned L = GetLocalLabel();
                 AddCodeLine("clr b");
-                AddCodeLine("ldx, (s)");
+                AddCodeLine("ldx (s)");
                 AddCodeLine("bp %s", LocalLabelName(L));
                 AddCodeLine("dcr b");
                 g_defcodelabel (L);
@@ -1605,16 +1606,10 @@ void g_addeqstatic (unsigned flags, uintptr_t label, long offs,
         case CF_LONG:
             lbuf = GetLabelName (flags, label, offs, 1);
             if (flags & CF_CONST) {
-                if (val < 0x10000) {
-                    /* TODO.. we can probably inline these */
-                    AddCodeLine ("ldb %s", lbuf);
-                    AssignA(val, 0);
-                    AddCodeLine("jsr laddeqstatic16");
-                } else {
-                    g_getstatic (flags, label, offs);
-                    g_inc (flags, val);
-                    g_putstatic (flags, label, offs);
-                }
+                /* TODO: look at optimizing */
+                g_getstatic (flags, label, offs);
+                g_inc (flags, val);
+                g_putstatic (flags, label, offs);
             } else {
                 AddCodeLine ("ldb %s", lbuf);
                 AddCodeLine ("jsr laddeq");
@@ -2005,7 +2000,7 @@ void g_restore (unsigned flags)
         case CF_LONG:
             AddCodeLine("lda (tmp2)");
             AddCodeLine("xay");
-            AddCodeLine("lda (tmp1");
+            AddCodeLine("lda (tmp1)");
             break;
 
         default:
@@ -2888,6 +2883,8 @@ void g_asr (unsigned flags, unsigned long val)
                         AddCodeLine ("dcrb ah");
                         g_defcodelabel (L);
                     }
+                    if (val == 24)
+                        return;
                     /* FIXME: ideally we want a byte LsrALBy */
                     if (flags & CF_UNSIGNED)
                         LsrABy(val - 24);
@@ -3187,12 +3184,12 @@ void g_dec (unsigned flags, unsigned long val)
         case CF_INT:
             if (flags & CF_USINGX) {
                 if (val == 1) {
-                    AddCodeLine("dex");
+                    AddCodeLine("dcx");
                     break;
                 }
                 if (val == 2) {
-                    AddCodeLine("dex");
-                    AddCodeLine("dex");
+                    AddCodeLine("dcx");
+                    AddCodeLine("dcx");
                     break;
                 }
                 AddCodeLine("ldb %d", (unsigned short)val);
@@ -3288,11 +3285,12 @@ void g_eq (unsigned flags, unsigned long val)
         case CF_LONG:
             AddCodeLine("ldb (-s)");
             AddCodeLine("sab");
-            AddCodeLine("tfr b,x");
+            AddCodeLine("xfr b,x");
             AddCodeLine("ldb (-s)");
             AddCodeLine("sub y,b");
             AddCodeLine("ori x,b");
             AddCodeLine("jsr booleq");
+            pop(flags);
             return;
     }
 }
@@ -3302,6 +3300,7 @@ void g_eq (unsigned flags, unsigned long val)
 void g_ne (unsigned flags, unsigned long val)
 /* Test for not equal */
 {
+    unsigned L;
     static const char* const ops[4] = {
         "tosneax", "tosneax", "tosneeax", "tosneeax"
     };
@@ -3333,8 +3332,15 @@ void g_ne (unsigned flags, unsigned long val)
                 return;
 
             case CF_LONG:
-                break;
-
+                L = GetLocalLabel();
+                AddCodeLine("ldb %d", (unsigned short)(val & 0xFFFF));
+                AddCodeLine("sab");
+                AddCodeLine("bnz %s", LocalLabelName(L));
+                AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                AddCodeLine("sub y,b");
+                g_defcodelabel(L);
+                AddCodeLine("jsr boolne");
+                return;
             default:
                 typeerror (flags);
         }
@@ -3363,6 +3369,17 @@ void g_ne (unsigned flags, unsigned long val)
             AddCodeLine ("jsr boolne");
             pop(flags);
             return;
+        case CF_LONG:
+            L = GetLocalLabel();
+            AddCodeLine("ldx (-s)");
+            AddCodeLine("ldb (-s)");
+            AddCodeLine("sab");
+            AddCodeLine("bnz %s", LocalLabelName(L));
+            AddCodeLine("sub y,x");
+            g_defcodelabel(L);
+            AddCodeLine("jsr boolne");
+            pop(flags);
+            return;
     }
 
     /* Use long way over the stack */
@@ -3375,9 +3392,6 @@ void g_lt (unsigned flags, unsigned long val)
 /* Test for less than */
 {
     unsigned L;
-    static const char* const ops[4] = {
-        "tosltax", "tosultax", "toslteax", "tosulteax"
-    };
 
 //    AddCodeLine(";g_lt");
     /* If the right hand side is const, the lhs is not on stack but still
@@ -3485,21 +3499,21 @@ void g_lt (unsigned flags, unsigned long val)
                     return;
 
                 case CF_LONG:
-                    /* This one is too costly */
-                    break;
+                    AddCodeLine("ldb %d", (unsigned short)val);
+                    AddCodeLine("sub y,b");
+                    L = GetLocalLabel();
+                    AddCodeLine("bnz %s", LocalLabelName(L));
+                    AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                    AddCodeLine("sab");
+                    g_defcodelabel(L);
+                    AddCodeLine("jsr boollt");
+                    return;
 
                 default:
                     typeerror (flags);
             }
 
         }
-
-        /* If we go here, we didn't emit code. Push the lhs on stack and fall
-        ** into the normal, non-optimized stuff. Note: The standard stuff will
-        ** always work with ints.
-        */
-        flags &= ~CF_FORCECHAR;
-        g_push (flags & ~CF_CONST, 0);
     }
      else {
         switch (flags & CF_TYPEMASK) {
@@ -3523,19 +3537,30 @@ void g_lt (unsigned flags, unsigned long val)
                     AddCodeLine ("jsr boollt");
                 pop (flags);
                 return;
+            case CF_LONG:
+                AddCodeLine("ldx (-s)");
+                AddCodeLine("ldb (-s)");
+                AddCodeLine("sub y,x");
+                L = GetLocalLabel();
+                AddCodeLine("bnz %s", LocalLabelName(L));
+                AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                AddCodeLine("sab");
+                g_defcodelabel(L);
+                if (flags & CF_UNSIGNED)
+                    AddCodeLine ("jsr boolult");
+                else
+                    AddCodeLine("jsr boollt");
+                pop (flags);
+                return;
+
         }
     }
-    /* Use long way over the stack */
-    oper (flags, val, ops);
 }
 
 void g_le (unsigned flags, unsigned long val)
 /* Test for less than or equal to */
 {
-    static const char* const ops[4] = {
-        "tosleax", "tosuleax", "tosleeax", "tosuleeax"
-    };
-
+    unsigned L;
 
     /* If the right hand side is const, the lhs is not on stack but still
     ** in the primary register.
@@ -3629,13 +3654,6 @@ void g_le (unsigned flags, unsigned long val)
             default:
                 typeerror (flags);
         }
-
-        /* If we go here, we didn't emit code. Push the lhs on stack and fall
-        ** into the normal, non-optimized stuff. Note: The standard stuff will
-        ** always work with ints.
-        */
-        flags &= ~CF_FORCECHAR;
-        g_push (flags & ~CF_CONST, 0);
     }
     else {
         switch (flags & CF_TYPEMASK) {
@@ -3659,10 +3677,22 @@ void g_le (unsigned flags, unsigned long val)
                     AddCodeLine ("jsr boolle");
                 pop (flags);
                 return;
+            case CF_LONG:
+                L = GetLocalLabel();
+                AddCodeLine("ldx (-s)");
+                AddCodeLine("ldb (-s)");
+                AddCodeLine("sub y,x");
+                AddCodeLine("bnz %s", LocalLabelName(L));
+                AddCodeLine("sab");
+                g_defcodelabel(L);
+                if (flags & CF_UNSIGNED)
+                    AddCodeLine ("jsr boolule");
+                else
+                    AddCodeLine ("jsr boolle");
+                pop (flags);
+                return;
         }
     }
-    /* Use long way over the stack */
-    oper (flags, val, ops);
 }
 
 
@@ -3670,10 +3700,7 @@ void g_le (unsigned flags, unsigned long val)
 void g_gt (unsigned flags, unsigned long val)
 /* Test for greater than */
 {
-    static const char* const ops[4] = {
-        "tosgtax", "tosugtax", "tosgteax", "tosugteax"
-    };
-
+    unsigned L;
 
     /* If the right hand side is const, the lhs is not on stack but still
     ** in the primary register.
@@ -3783,13 +3810,6 @@ void g_gt (unsigned flags, unsigned long val)
             default:
                 typeerror (flags);
         }
-
-        /* If we go here, we didn't emit code. Push the lhs on stack and fall
-        ** into the normal, non-optimized stuff. Note: The standard stuff will
-        ** always work with ints.
-        */
-        flags &= ~CF_FORCECHAR;
-        g_push (flags & ~CF_CONST, 0);
     }
     else {
         switch (flags & CF_TYPEMASK) {
@@ -3813,19 +3833,28 @@ void g_gt (unsigned flags, unsigned long val)
                     AddCodeLine ("jsr boolgt");
                 pop (flags);
                 return;
+            case CF_LONG:
+                L = GetLocalLabel();
+                AddCodeLine("ldx (-s)");
+                AddCodeLine("ldb (-s)");
+                AddCodeLine("sub y,x");
+                AddCodeLine("bnz %s", LocalLabelName(L));
+                AddCodeLine("sab");
+                g_defcodelabel(L);
+                if (flags & CF_UNSIGNED)
+                    AddCodeLine ("jsr boolugt");
+                else
+                    AddCodeLine ("jsr boolgt");
+                pop (flags);
+                return;
         }
     }
-    /* Use long way over the stack */
-    oper (flags, val, ops);
 }
 
 void g_ge (unsigned flags, unsigned long val)
 /* Test for greater than or equal to */
 {
     unsigned L;
-    static const char* const ops[4] = {
-        "tosgeax", "tosugeax", "tosgeeax", "tosugeeax"
-    };
 
 
     /* If the right hand side is const, the lhs is not on stack but still
@@ -3942,20 +3971,23 @@ void g_ge (unsigned flags, unsigned long val)
                     return;
 
                 case CF_LONG:
-                    /* This one is too costly */
-                    break;
+                    L = GetLocalLabel();
+                    AddCodeLine("ldb %d", (unsigned short)(val >> 16));
+                    AddCodeLine("sub y,b");
+                    AddCodeLine("bnz %s", LocalLabelName(L));
+                    AddCodeLine("ldb %d", (unsigned short)(val & 0xFFFF));
+                    AddCodeLine("sab");
+                    g_defcodelabel(L);
+                    if (flags & CF_UNSIGNED)
+                        AddCodeLine ("jsr booluge");
+                    else
+                        AddCodeLine ("jsr boolge");
+                    return;
 
                 default:
                     typeerror (flags);
             }
         }
-
-        /* If we go here, we didn't emit code. Push the lhs on stack and fall
-        ** into the normal, non-optimized stuff. Note: The standard stuff will
-        ** always work with ints.
-        */
-        flags &= ~CF_FORCECHAR;
-        g_push (flags & ~CF_CONST, 0);
     }
     else {
         switch (flags & CF_TYPEMASK) {
@@ -3979,10 +4011,22 @@ void g_ge (unsigned flags, unsigned long val)
                     AddCodeLine ("jsr boolge");
                 pop (flags);
                 return;
+            case CF_LONG:
+                L = GetLocalLabel();
+                AddCodeLine("ldx (-s)");
+                AddCodeLine("ldb (-s)");
+                AddCodeLine("sub y,x");
+                AddCodeLine("bnz %s", LocalLabelName(L));
+                AddCodeLine("sab");
+                g_defcodelabel(L);
+                if (flags & CF_UNSIGNED)
+                    AddCodeLine ("jsr booluge");
+                else
+                    AddCodeLine ("jsr boolge");
+                pop (flags);
+                return;
         }
     }
-    /* Use long way over the stack */
-    oper (flags, val, ops);
 }
 
 

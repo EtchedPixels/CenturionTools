@@ -1577,20 +1577,6 @@ static void PreDec (ExprDesc* Expr)
 
 /*
  *	FIXME: we need to generate better code here when we can
- *
- *	Options include
- *
- *	ldd whatever
- *	(tsx)inx/bcc/inx
- *
- *	or once we have better load via x
- *	ldx foo
- *	inx
- *	stx foo
- *	dex
- *
- *	Ditto postdec
- *
  */
 static void PostInc (ExprDesc* Expr)
 /* Handle the postincrement operator */
@@ -1613,46 +1599,33 @@ static void PostInc (ExprDesc* Expr)
     /* Get the data type */
     Flags = TypeOf (Expr->Type);
 
-    /* Emit smaller code if a char variable is at a constant location */
-    if ((Flags & CF_CHAR) == CF_CHAR && ED_IsLocConst(Expr)) {
+    unsigned size = 1;
+    /* Push the address if needed */
+    PushAddr (Expr);
 
-        /* FIXME: review for 8bit local via ,x */
-        LoadExpr (CF_NONE, Expr);
-        AddCodeLine ("inc %s", ED_GetLabelName(Expr, 0));
-
+    /* Scale pointers */
+    if (IsTypePtr (Expr->Type))
+        size = CheckedSizeOf (Expr->Type + 1);
+    /* Optimize some special cases */
+    /* This doesn't work well because it ends up in X - we actually need
+       the caller to try this via X - but the peephole can often clean
+       it up */
+    if (CanLoadViaX(Flags, Expr) && CanStoreViaX(Flags, Expr) && size <= 2) {
+        LoadExprX(CF_NONE, Expr);
+        g_inc(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
+        StoreX(Expr, 0);
+        g_dec(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
+        g_x_to_primary();
     } else {
-        unsigned size = 1;
-        /* Push the address if needed */
-        PushAddr (Expr);
-
-        /* Scale pointers */
-        if (IsTypePtr (Expr->Type))
-            size = CheckedSizeOf (Expr->Type + 1);
-        /* Optimize some special cases */
-
-        /* This doesn't work well because it ends up in X - we actually need
-           the caller to try this via X - but the peephole can often clean
-           it up */
-        if (CanLoadViaX(Flags, Expr) && CanStoreViaX(Flags, Expr) && size <= 2) {
-            LoadExprX(CF_NONE, Expr);
-            g_inc(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
-            StoreX(Expr, 0);
-            g_dec(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
-            g_x_to_primary();
-        } else {
-            /* Fetch the value and save it (since it's the result of the expression) */
-            LoadExpr (CF_NONE, Expr);
-            g_save (Flags | CF_FORCECHAR);
-
-            /* If we have a pointer expression, increment by the size of the type */
-            g_inc (Flags | CF_CONST | CF_FORCECHAR, size);
-
-            /* Store the result back */
-            Store (Expr, 0);
-
-            /* Restore the original value in the primary register */
-            g_restore (Flags | CF_FORCECHAR);
-        }
+        /* Fetch the value and save it (since it's the result of the expression) */
+        LoadExpr (CF_NONE, Expr);
+        g_save (Flags | CF_FORCECHAR);
+        /* If we have a pointer expression, increment by the size of the type */
+        g_inc (Flags | CF_CONST | CF_FORCECHAR, size);
+        /* Store the result back */
+        Store (Expr, 0);
+        /* Restore the original value in the primary register */
+        g_restore (Flags | CF_FORCECHAR);
     }
 
     /* The result is always an expression, no reference */
@@ -1682,46 +1655,36 @@ static void PostDec (ExprDesc* Expr)
     /* Get the data type */
     Flags = TypeOf (Expr->Type);
 
-    /* Emit smaller code if a char variable is at a constant location */
-    if ((Flags & CF_CHAR) == CF_CHAR && ED_IsLocConst(Expr)) {
+    unsigned size = 1;
+    /* Push the address if needed */
+    PushAddr (Expr);
 
-        LoadExpr (CF_NONE, Expr);
-        AddCodeLine ("dec %s", ED_GetLabelName(Expr, 0));
+    /* Scale pointers */
+    if (IsTypePtr (Expr->Type))
+        size = CheckedSizeOf (Expr->Type + 1);
+    /* Optimize some special cases */
 
+    /* This doesn't work well because it ends up in X - we actually need
+       the caller to try this via X - but the peephole can often clean
+       it up */
+    if (CanLoadViaX(Flags, Expr) && CanStoreViaX(Flags, Expr) && size <= 2) {
+        LoadExprX(CF_NONE, Expr);
+        g_dec(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
+        StoreX(Expr, 0);
+        g_inc(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
+        g_x_to_primary();
     } else {
-        unsigned size = 1;
-        /* Push the address if needed */
-        PushAddr (Expr);
+        /* Fetch the value and save it (since it's the result of the expression) */
+        LoadExpr (CF_NONE, Expr);
+        g_save (Flags | CF_FORCECHAR);
 
-        /* Scale pointers */
-        if (IsTypePtr (Expr->Type))
-            size = CheckedSizeOf (Expr->Type + 1);
-        /* Optimize some special cases */
+        g_dec (Flags | CF_CONST | CF_FORCECHAR, size);
 
-        /* This doesn't work well because it ends up in X - we actually need
-           the caller to try this via X - but the peephole can often clean
-           it up */
-        if (CanLoadViaX(Flags, Expr) && CanStoreViaX(Flags, Expr) && size <= 2) {
-            LoadExprX(CF_NONE, Expr);
-            g_dec(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
-            StoreX(Expr, 0);
-            g_inc(Flags | CF_CONST | CF_FORCECHAR | CF_USINGX, size);
-            g_x_to_primary();
-        } else {
-            /* Fetch the value and save it (since it's the result of the expression) */
-            LoadExpr (CF_NONE, Expr);
-            g_save (Flags | CF_FORCECHAR);
-
-            g_dec (Flags | CF_CONST | CF_FORCECHAR, size);
-
-            /* Store the result back */
-            Store (Expr, 0);
-
-            /* Restore the original value in the primary register */
-            g_restore (Flags | CF_FORCECHAR);
-        }
+        /* Store the result back */
+        Store (Expr, 0);
+        /* Restore the original value in the primary register */
+        g_restore (Flags | CF_FORCECHAR);
     }
-
     /* The result is always an expression, no reference */
     ED_MakeRValExpr (Expr);
 }

@@ -28,6 +28,7 @@ install:
 	cp ccwrx.rules /opt/aswrx6/lib/
 	cp crt0.o /opt/aswrx6/lib/
 	cp libc.a /opt/aswrx6/lib/
+	cp libwrx6.a /opt/aswrx6/lib/
 
 ccwrx6: ccwrx6.c
 	gcc -Wall -pedantic -O2 ccwrx6.c -o ccwrx6
@@ -137,6 +138,7 @@ STDIO =	stdio/fclose.o \
 	stdio/vsscanf.o
 
 SUPPORT = \
+	supportwrx6/asreax4.o \
 	supportwrx6/asreax8.o \
 	supportwrx6/bneg.o \
 	supportwrx6/compleax.o \
@@ -152,12 +154,17 @@ SUPPORT = \
 	supportwrx6/negeax.o \
 	supportwrx6/shleax.o \
 	supportwrx6/shr.o \
+	supportwrx6/shreax8.o \
+	supportwrx6/shreax4.o \
+	supportwrx6/tmp.o \
 	supportwrx6/tosasleax.o \
+	supportwrx6/tosasrax.o \
 	supportwrx6/tosasreax.o \
 	supportwrx6/tosdivax.o \
 	supportwrx6/tosdiveax.o \
 	supportwrx6/tosmodeax.o \
 	supportwrx6/tosshlax.o \
+	supportwrx6/tosshrax.o \
 	supportwrx6/tossubeax.o \
 	supportwrx6/tosudivax.o \
 	supportwrx6/tosudiveax.o \

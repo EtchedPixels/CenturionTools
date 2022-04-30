@@ -69,12 +69,12 @@ loop:		stb	(-s)
 		;
 		; R - D
 		;
-		ldb	z
+		xfr	z,b
 		xfr	b,x
 		lda	DIVIS+2(s)
 		sab
 		xfr	b,z
-		ldb	y
+		xfr	y,b
 		lda	DIVIS(s)
 		bnl	noripple
 		dcr	b

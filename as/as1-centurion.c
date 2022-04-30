@@ -112,23 +112,28 @@ void address_encoding(uint8_t opbase, unsigned type, unsigned store, unsigned si
 		if (c != '(') {
 			unget(c);
 			/* Constant */
-			if (indir)
-				aerr(BADINDIR);
-			if (store)
+			switch(a1.a_type & TMMODE) {
+			case TUSER:
+				if (indir)
+					aerr(BADINDIR);
+				if (store)
+					aerr(BADADDR);
+				/* Jumps load the generated address into the PC so
+				   as written we need one more layer of indirection so
+				   the user can write jump foo or jump (xx) not jump (foo)
+				   and jump @(xx) */
+				if (type == 2)
+					outab(opbase | 1);
+				else
+					outab(opbase);
+				if (size == 1)
+					outrab(&a1);
+				else
+					outraw(&a1);
+				return;
+			default:
 				aerr(BADADDR);
-			/* Jumps load the generated address into the PC so
-			   as written we need one more layer of indirection so
-			   the user can write jump foo or jump (xx) not jump (foo)
-			   and jump @(xx) */
-			if (type == 2)
-				outab(opbase | 1);
-			else
-				outab(opbase);
-			if (size == 1)
-				outrab(&a1);
-			else
-				outraw(&a1);
-			return;
+			}
 		}
 		istuser(&a1);
 		offset = 1;

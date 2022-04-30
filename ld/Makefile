@@ -5,7 +5,7 @@ all: ldwrx6 nmwrx6 osizewrx6 dumprelocswrx6
 
 HDR = ld.h obj.h
 
-CFLAGS = -DTARGET_WARREX -Wall -pedantic -I../ld
+CFLAGS = -DTARGET_WARREX -DOBJ_LONGNAME -Wall -pedantic -I../ld
 
 ldwrx6: $(HDR) ld.o
 	cc -o ldwrx6 ld.o

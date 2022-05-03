@@ -161,10 +161,10 @@ SYM	sym[] = {
 
 	{	0,	"ldmmu",	TMMU,		0x2E0C  },
 	{	0,	"stmmu",	TMMU,		0x2E1C	},
-	{	0,	"lddma",	TDMA,		0x2F00	},
-	{	0,	"stdma",	TDMA,		0x2F01	},
-	{	0,	"lddmac",	TDMA,		0x2F02	},
-	{	0,	"stdmac",	TDMA,		0x2F03	},
+	{	0,	"stdma",	TDMA,		0x2F00	},
+	{	0,	"lddma",	TDMA,		0x2F01	},
+	{	0,	"stdmac",	TDMA,		0x2F02	},
+	{	0,	"lddmac",	TDMA,		0x2F03	},
 	{	0,	"dmamode",	TDMAM,		0x2F04	},
 	{	0,	"dmaen",	TIMPL,		0x2F06	},
 	

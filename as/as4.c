@@ -300,9 +300,11 @@ void outab2(uint8_t b)
 	list_addbyte(b);
 }
 
-void outabchk2(uint16_t b)
+/* Allow the user to specify negative full ranges as well as positive, for
+   example for things like LD A,-255 */
+void outabchk2(int16_t b)
 {
-	if (b > 255)
+	if (b < -255 || b > 255)
 		err('o', CONSTANT_RANGE);
 	outab(b);
 }

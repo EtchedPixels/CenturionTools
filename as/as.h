@@ -1337,7 +1337,7 @@ extern void outsegment(int);
 extern void outab(uint8_t);
 extern void outabyte(uint8_t);
 extern void outab2(uint8_t);
-extern void outabchk2(uint16_t);
+extern void outabchk2(int16_t);
 extern void outraw(ADDR *);
 extern void outrab(ADDR *);
 extern void outrabrel(ADDR *);

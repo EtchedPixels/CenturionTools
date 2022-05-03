@@ -186,11 +186,17 @@ void address_encoding(uint8_t opbase, unsigned type, unsigned store, unsigned si
 			}
 			return;
 		}
+		/* Turn 0(x) into (x) */
+		if (offset && a1.a_value == 0)
+			offset = 0;
 		/* Simply an index pair */
 		switch(type) {
 		case 0:	/* Instructions with 4 mode bits */
-			outab(opbase | 0x08 | ((a2.a_type & TMREG) >> 1));
-			return;
+			if (!offset) {
+				outab(opbase | 0x08 | ((a2.a_type & TMREG) >> 1));
+				return;
+			}
+			/* Fall through */
 		case 1:	/* Instructions with 3 mode bits - use the longer form */
 			outab(opbase | 5);
 			if (offset) {

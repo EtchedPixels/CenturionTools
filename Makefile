@@ -141,6 +141,8 @@ SUPPORT = \
 	supportwrx6/asreax4.o \
 	supportwrx6/asreax8.o \
 	supportwrx6/bneg.o \
+	supportwrx6/center.o \
+	supportwrx6/cexit.o \
 	supportwrx6/compleax.o \
 	supportwrx6/__cpu_to_le16.o \
 	supportwrx6/__cpu_to_le32.o \

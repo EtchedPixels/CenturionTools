@@ -250,7 +250,7 @@ static void AddAConst(int value)
         AddCodeLine("inr a");
     } else {
         AddCodeLine("ld b, 0x%04X", value & 0xFFFF);
-        AddCodeLine("add a,b");
+        AddCodeLine("add b,a");
     }
 }
 
@@ -260,7 +260,7 @@ static void AddA(const char *where, unsigned int offset)
         AddCodeLine("ldb (%s)", where);
     else
         AddCodeLine("ldb (%s+%d)", where, offset);
-    AddCodeLine("add a,b");
+    AddCodeLine("add b,a");
 }
 
 static void AddAVia(char r, int offset)
@@ -268,7 +268,7 @@ static void AddAVia(char r, int offset)
     if (offset > 127)
             Internal("Bad offset %d in LoadAVia%c.\n", offset, r);
     AddCodeLine("ldb %d(%c)", offset, r);
-    AddCodeLine("add a,b");
+    AddCodeLine("add b,a");
 }
 
 static void LsrABy(int n)
@@ -673,23 +673,12 @@ void g_leave(int voidfunc, unsigned flags, unsigned argsize)
 
     if (StackPtr && !ErrorCount)
         Internal("g_leave: stack unbalanced by %d", StackPtr);
-
-    /* Recover the previous frame pointer if we were vararg */
-    if (FramePtr) {
-        AddCodeLine("ldx (s+)");
-        AddCodeLine("xfr x,z");
-    }
-    AddCodeLine("ldx (s+)");
-    AddCodeLine("rsr");
+    AddCodeLine("jmp cexit");
 }
-
-
 
 /*****************************************************************************/
 /*                           Fetching memory cells                           */
 /*****************************************************************************/
-
-
 
 void g_getimmed (unsigned Flags, unsigned long Val, long Offs)
 /* Load a constant into the primary register */
@@ -757,7 +746,7 @@ void g_getstatic (unsigned flags, uintptr_t label, long offs)
             if ((flags & CF_FORCECHAR) || (flags & CF_TEST)) {
                 AddCodeLine ("ldab (%s)", lbuf);   /* load A from the label */
             } else {
-                AddCodeLine ("clrb ah");
+                AddCodeLine ("cla");
                 AddCodeLine ("ldab (%s)", lbuf);   /* load A from the label */
                 if (!(flags & CF_UNSIGNED)) {
                     /* Must sign extend */
@@ -809,7 +798,7 @@ void g_getlocal (unsigned Flags, int Offs)
             if ((Flags & CF_FORCECHAR) || (Flags & CF_TEST)) {
                 AddCodeLine ("ldab %d(%c)", Offs, r);
             } else {
-                AddCodeLine ("clr ah");
+                AddCodeLine ("cla");
                 AddCodeLine ("ldab %d(%c) ", Offs, r);
                 if ((Flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
@@ -887,7 +876,7 @@ void g_getind (unsigned Flags, unsigned Offs)
         case CF_CHAR:
             /* Character sized */
             AddCodeLine ("ldab %d(a)", Offs);
-            AddCodeLine ("clr ah");
+            AddCodeLine ("clrb ah");
             if ((Flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
                     AddCodeLine ("bp %s", LocalLabelName (L));
@@ -1147,7 +1136,7 @@ static void g_regchar (unsigned Flags)
 {
     unsigned L;
 
-    AddCodeLine ("clr ah");
+    AddCodeLine ("clrb ah");
 
     if ((Flags & CF_UNSIGNED) == 0) {
         AddCodeLine("xfr al,al");
@@ -1195,7 +1184,7 @@ void g_reglong (unsigned Flags)
             if (Flags & CF_FORCECHAR) {
                 /* Conversion is from char */
                 AddCodeLine("clr y");
-                AddCodeLine("clr ah");
+                AddCodeLine("clrb ah");
                 if ((Flags & CF_UNSIGNED) == 0) {
                     L = GetLocalLabel();
                     AddCodeLine ("xfr al,al");
@@ -1210,7 +1199,7 @@ void g_reglong (unsigned Flags)
 
         case CF_INT:
             AddCodeLine("clr y");
-            AddCodeLine("clr ah");
+            AddCodeLine("clrb ah");
             if ((Flags & CF_UNSIGNED)  == 0) {
                 L = GetLocalLabel();
                 AddCodeLine ("xfr al,al");
@@ -1555,11 +1544,11 @@ void g_addeqstatic (unsigned flags, uintptr_t label, long offs,
 
         case CF_CHAR:
             if (flags & CF_FORCECHAR) {
-                AddCodeLine ("clr ah");
+                AddCodeLine ("clrb ah");
                 if (flags & CF_CONST) {
                     /* Optimise +1 case ? */
                     AddCodeLine ("ldab (%s)", lbuf);
-                    AddCodeLine ("ldbb %d\n", (unsigned char) val);
+                    AddCodeLine ("ldbb %d", (unsigned char) val);
                     AddCodeLine ("addb bl,al");
                     AddCodeLine ("stab (%s)", lbuf);
                 } else {
@@ -1636,7 +1625,7 @@ void g_addeqlocal (unsigned flags, int Offs, unsigned long val)
         case CF_CHAR:
             if (flags & CF_FORCECHAR) {
                 r= GenerateOffset(flags, &Offs);
-                AddCodeLine("clr ah");
+                AddCodeLine("clrb ah");
                 if ((flags & CF_CONST) && val == 1) {
                     AddCodeLine("ldab %d(%c)", Offs, r);
                     AddCodeLine("inr al");
@@ -1704,7 +1693,7 @@ void g_addeqind (unsigned flags, unsigned offs, unsigned long val)
             }
             AddCodeLine("stab %d(x)", offs);
             /* Do we care about sign prop here ? */
-            AddCodeLine("clr ah");
+            AddCodeLine("clrb ah");
             break;
 
         case CF_INT:
@@ -1742,10 +1731,10 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
 
         case CF_CHAR:
             if (flags & CF_FORCECHAR) {
-                AddCodeLine ("clr ah");
+                AddCodeLine ("cla");
                 if (flags & CF_CONST) {
                     AddCodeLine ("ldab (%s)", lbuf);
-                    AddCodeLine ("ldbb -%d\n", (unsigned char)(val & 0xFF));
+                    AddCodeLine ("ldbb -%d", (unsigned char)(val & 0xFF));
                     AddCodeLine ("addb bl,al");
                     AddCodeLine ("stab (%s)", lbuf);
                 } else {
@@ -1882,7 +1871,7 @@ void g_subeqind (unsigned flags, unsigned offs, unsigned long val)
         case CF_CHAR:
             /* No need to care about sign extension ? */
             AToX();
-            AddCodeLine ("clrb ah");
+            AddCodeLine ("cla");
             AddCodeLine ("ldab %d(x)", offs);
             if (val == 1)
                 AddCodeLine("dcrb al");

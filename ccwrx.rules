@@ -1,0 +1,264 @@
+#
+#	Branch noise
+#
+	jmp %1
+%1:
+	=
+%1:
+
+	jmp %2
+%1:
+%2:
+	=
+%1:
+%2:
+
+	jmp %3
+%1:
+%2:
+%3:
+	=
+%1:
+%2:
+%3:
+
+#
+#	Function entry
+#
+_%1:
+	stx (-s)
+	xfr z,x
+	stx (-s)
+	xfr s,z
+	;statement
+=
+_%1:
+	jsr center0
+
+_%1:
+	stx (-s)
+	xfr z,x
+	stx (-s)
+	xfr s,z
+	ldx -2
+	add x,s
+=
+_%1:
+	jsr center2
+
+_%1:
+	stx (-s)
+	xfr z,x
+	stx (-s)
+	xfr s,z
+	dcr s
+=
+_%1:
+	jsr center1
+
+_%1:
+	stx (-s)
+	xfr z,x
+	stx (-s)
+	xfr s,z
+	ldx %2
+	add x,s
+=
+_%1:
+	jsr center
+	.word %2
+
+_%1:
+	stx (-s)
+	xfr z,x
+	stx (-s)
+	xfr s,z
+	lda %2
+=
+_%1:
+	jsr center0
+	lda %2
+
+_%1:
+	stx (-s)
+	xfr z,x
+	stx (-s)
+	xfr s,z
+	cla
+=
+_%1:
+	jsr center0
+	cla
+
+#
+#	Remove bool generation when flags will always be valid
+#
+	jsr booleq
+	jz %1
+=
+	jz %1
+
+	jsr boolne
+	jz %1
+=
+	jnz %1
+
+	jsr booleq
+	jnz %1
+=
+	jnz %1
+
+	jsr boolne
+	jn %1
+=
+	jz %1
+
+#
+#	Reloads - be careful of s+ etc.... Work across statement boundaries
+#
+	stab %1(z)
+	;statement
+	ldab %1(z)
+=
+	stab %1(z)
+
+	stab %1(x)
+	;statement
+	ldab %1(x)
+=
+	stab %1(x)
+
+	stab %1(s)
+	;statement
+	ldab %1(s)
+=
+	stab %1(s)
+
+	sta %1(z)
+	;statement
+	lda %1(z)
+=
+	sta %1(z)
+
+	sta %1(x)
+	;statement
+	lda %1(x)
+=
+	sta %1(x)
+
+	sta %1(s)
+	;statement
+	lda %1(s)
+=
+	sta %1(s)
+
+	stab %1(z)
+	ldab %1(z)
+=
+	stab %1(z)
+
+	stab %1(x)
+	ldab %1(x)
+=
+	stab %1(x)
+
+	stab %1(s)
+	ldab %1(s)
+=
+	stab %1(s)
+
+	sta %1(z)
+	lda %1(z)
+=
+	sta %1(z)
+
+	sta %1(x)
+	lda %1(x)
+=
+	sta %1(x)
+
+	sta %1(s)
+	lda %1(s)
+=
+	sta %1(s)
+
+#
+#	Clear up repeat clear high. This is safe as we might do ops on (a)
+# 	but we never clear the top of a pointer.
+#
+	clrb ah
+	ldab %1
+	clrb ah
+=
+	cla
+	ldab %1
+
+	cla
+	ldab %1
+	clrb ah
+=
+	cla
+	ldab %1
+
+#
+#	Clean up small predec/inc
+#
+	ldab %1
+	stab (tmp1)
+	dcrb al
+	stab %1
+	ldab (tmp1)
+=
+	ldab %1
+	dcrb al
+	stab %1
+	inrb al
+
+	lda %1
+	sta (tmp1)
+	dca
+	sta %1
+	lda (tmp1)
+=
+	lda %1
+	dcr a
+	sta %1
+	ina
+
+	ldab %1
+	stab (tmp1)
+	inrb al
+	stab %1
+	ldab (tmp1)
+=
+	ldab %1
+	inrb al
+	stab %1
+	dcrb al
+
+	lda %1
+	sta (tmp1)
+	inr a
+	sta %1
+	lda (tmp1)
+=
+	lda %1
+	ina
+	sta %1
+	dca
+
+#
+#	Adding FFFF is dca
+#
+	lda %1
+	ld b, 0xFFFF
+	add a,b
+=
+	lda %1
+	dca
+
+	ldbb -1
+	addb bl,al
+=
+	dcr al
+

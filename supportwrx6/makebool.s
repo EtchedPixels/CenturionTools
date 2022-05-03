@@ -42,16 +42,16 @@ boolgt:	bgz	ret1
 	cla
 	rsr
 
-boolugt:
+boolult:
 	bz	ret0
-booluge:
+boolule:
 	bnl	ret1
 	cla
 	rsr
 
-boolule:
+booluge:
 	bz	ret1
-boolult:			; use C flag
+boolugt:			; use C flag
 	lda	0		; doesn't affect carry unlike clr
 	rlrb	al
 	rsr

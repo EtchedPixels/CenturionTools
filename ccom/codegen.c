@@ -233,8 +233,9 @@ static void StoreAVia(char r, int offset)
    be seen */
 static void SubAConst(int value)
 {
-    AddCodeLine("ldb %d", value & 0xFFFF);
-    AddCodeLine("sub a,b");
+    /* CPU has an RSUB instruction in reality so use add */
+    AddCodeLine("ldb -%d", value & 0xFFFF);
+    AddCodeLine("add b,a");
 }
 
 static void AddAConst(int value)
@@ -1744,8 +1745,8 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
                 AddCodeLine ("clr ah");
                 if (flags & CF_CONST) {
                     AddCodeLine ("ldab (%s)", lbuf);
-                    AddCodeLine ("ldbb %d\n", (unsigned char)(val & 0xFF));
-                    AddCodeLine ("subb bl,al");
+                    AddCodeLine ("ldbb -%d\n", (unsigned char)(val & 0xFF));
+                    AddCodeLine ("addb bl,al");
                     AddCodeLine ("stab (%s)", lbuf);
                 } else {
                     AddCodeLine ("ldbb (%s)", lbuf);
@@ -1764,7 +1765,7 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
 
         case CF_INT:
             if ((flags & CF_CONST) && (flags & CF_USINGX)) {
-                AddCodeLine ("ldb %d", (unsigned short)val);
+                AddCodeLine ("ldb -%d", (unsigned short)val);
                 AddCodeLine ("ldx (%s)", lbuf);
                 AddCodeLine ("add b,x");
                 AddCodeLine ("stx (%s)", lbuf);
@@ -1776,9 +1777,9 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
                 StoreA(lbuf, 0);
             } else {
                 AddCodeLine("ldb (%s)", lbuf);
-                AddCodeLine("sub a,b");
-                AddCodeLine("stb (%s)", lbuf);
-                AddCodeLine("xfr b,a");
+                AddCodeLine("sub b,a");
+                AddCodeLine("xfr a,b");
+                AddCodeLine("sta (%s)", lbuf);
             }
             break;
 
@@ -1817,12 +1818,14 @@ void g_subeqlocal (unsigned flags, int Offs, unsigned long val)
                     if (val == 1)
                         AddCodeLine ("dcrb al");
                     else {
-                        AddCodeLine ("ldbb %d", (unsigned char) val);
+                        AddCodeLine ("ldbb %d", -(unsigned char) val);
+                        AddCodeLine ("addb bl,al");
                     }
                 } else {
                     AddCodeLine ("ldbb %d(%c)", Offs, r);
+                    AddCodeLine ("subb bl,al");
+                    AddCodeLine ("xfrb bl,al");
                 }
-                AddCodeLine ("subb bl,al");
                 AddCodeLine ("stab %d(%c)", Offs, r);
                 if ((flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
@@ -1844,6 +1847,7 @@ void g_subeqlocal (unsigned flags, int Offs, unsigned long val)
             }
             AddCodeLine("ldb %d(%c)", Offs, r);
             AddCodeLine("sub b,a");
+            AddCodeLine("xfr b,a");
             StoreAVia(r, Offs);
             break;
 
@@ -1883,8 +1887,8 @@ void g_subeqind (unsigned flags, unsigned offs, unsigned long val)
             if (val == 1)
                 AddCodeLine("dcrb al");
             else {
-                AddCodeLine("ldbb %d",(unsigned char)val);
-                AddCodeLine("sub b,a");
+                AddCodeLine("ldbb -%d",(unsigned char)val);
+                AddCodeLine("addb bl,al");
             }
             AddCodeLine ("stab %d(x)", offs);
             break;
@@ -2324,8 +2328,8 @@ void g_space (int Space, int save_d)
         case 0:
             break;
         default:
-            AddCodeLine("ldx %d", Space);
-            AddCodeLine("sub x,s");
+            AddCodeLine("ldx -%d", Space);
+            AddCodeLine("add x,s");
             break;
     }
 }
@@ -2440,15 +2444,13 @@ void g_sub (unsigned flags, unsigned long val)
         case CF_CHAR:
                 if (flags & CF_FORCECHAR) {
                     AddCodeLine("ldbb (-s)");
-                    AddCodeLine("sabb");
-                    AddCodeLine("xfr b,a");
+                    AddCodeLine("subb bl,al");
                     pop(flags);
                     return;
                 }
         case CF_INT:
                 AddCodeLine("ldb (-s)");
-                AddCodeLine("sab");
-                AddCodeLine("xfr b,a");
+                AddCodeLine("sub b,a");
                 pop(flags);
                 return;
         /* And long via helpers because subtract flags are very strange */
@@ -2457,7 +2459,7 @@ void g_sub (unsigned flags, unsigned long val)
 }
 
 
-
+/* rsub is actually not really useful versus sub. TODO remove rsub conversions */
 void g_rsub (unsigned flags, unsigned long val)
 /* Primary = Primary - TOS */
 {
@@ -2471,8 +2473,8 @@ void g_rsub (unsigned flags, unsigned long val)
                     if (val == 1)
                         AddCodeLine("dcr al");
                     else {
-                        AddCodeLine("ldbb %d", (unsigned char) val);
-                        AddCodeLine("subb bl,al");
+                        AddCodeLine("ldbb -%d", (unsigned char) val);
+                        AddCodeLine("addb bl,al");
                     }
                     break;
                 }
@@ -2488,8 +2490,8 @@ void g_rsub (unsigned flags, unsigned long val)
                         AddCodeLine("dcr x");
                         break;
                     }
-                    AddCodeLine("ldb %d", (unsigned short) val);
-                    AddCodeLine("sub b,x");
+                    AddCodeLine("ldb %d", -(unsigned short) val);
+                    AddCodeLine("add b,x");
                     break;
                 }
                 SubAConst(val);
@@ -3387,6 +3389,9 @@ void g_ne (unsigned flags, unsigned long val)
 }
 
 
+/*
+ *	Because we have rsub the helpers are somewhat reversed too
+ */
 
 void g_lt (unsigned flags, unsigned long val)
 /* Test for less than */
@@ -3398,11 +3403,6 @@ void g_lt (unsigned flags, unsigned long val)
     ** in the primary register.
     */
     if (flags & CF_CONST) {
-
-        /* Because the handling of the overflow flag is too complex for
-        ** inlining, we can handle only unsigned compares, and signed
-        ** compares against zero here.
-        */
         if (flags & CF_UNSIGNED) {
 
             /* Give a warning in some special cases */
@@ -4196,8 +4196,8 @@ void g_initstatic (unsigned InitLabel, unsigned VarLabel, unsigned Size)
         AddCodeLine ("sta (-s)");
     }
     AddCodeLine ("jsr %s", GetLabelName (CF_EXTERNAL, (uintptr_t) "memcpy", 0, 0));
-    AddCodeLine ("ldb 6");
-    AddCodeLine  ("sub b,s");
+    AddCodeLine ("ldb -6");
+    AddCodeLine  ("add b,s");
 }
 
 

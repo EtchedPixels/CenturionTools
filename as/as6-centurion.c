@@ -115,6 +115,7 @@ SYM	sym[] = {
 	{	0,	"js3",		TBRA16,		0x1C	},
 	{	0,	"js4",		TBRA16,		0x1D	},
 	{	0,	"bra",		TJUMP8,		0x73	},
+	{	0,	"bsr",		TJUMP8,		0x7B	},
 	
 
 	/* 0x2X		:	Mix of ALU and misc */
@@ -158,12 +159,12 @@ SYM	sym[] = {
 
 	/* 0x2E/F	:	Special */
 
-	{	0,	"mmu0",		TMMU,		0x200C  },
-	{	0,	"mmu1",		TMMU,		0x201C	},
-	{	0,	"rdmaaddr",	TDMA,		0x2F00	},
-	{	0,	"sdmaaddr",	TDMA,		0x2F01	},
-	{	0,	"rdmalen",	TDMA,		0x2F02	},
-	{	0,	"sdmalen",	TDMA,		0x2F03	},
+	{	0,	"ldmmu",	TMMU,		0x2E0C  },
+	{	0,	"stmmu",	TMMU,		0x2E1C	},
+	{	0,	"lddma",	TDMA,		0x2F00	},
+	{	0,	"stdma",	TDMA,		0x2F01	},
+	{	0,	"lddmac",	TDMA,		0x2F02	},
+	{	0,	"stdmac",	TDMA,		0x2F03	},
 	{	0,	"dmamode",	TDMAM,		0x2F04	},
 	{	0,	"dmaen",	TIMPL,		0x2F06	},
 	

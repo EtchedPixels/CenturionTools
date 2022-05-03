@@ -562,7 +562,7 @@ loop:
 				outab(0x5F);
 			else {
 				outab(0x55);
-				outab(r1 | (r2 << 4));
+				outab(r2 | (r1 << 4));
 			}
 			break;
 		case TBR:
@@ -572,7 +572,7 @@ loop:
 				outab(0x4D);
 			else {
 				outab(0x45);
-				outab(r1 | (r2 << 4));
+				outab(r2 | (r1 << 4));
 			}
 			break;
 		default:
@@ -582,7 +582,17 @@ loop:
 	case TMMU:
 		if (cpu_model <= 4)
 			aerr(BADCPU);
-		/* TODO */
+		getaddr(&a1);
+		istuser(&a1);
+		if (a1.a_value < 0 || a1.a_value > 7)
+			aerr(RANGE);
+		comma();
+		getaddr(&a2);
+		istuser(&a2);
+		outab(opcode >> 8);
+		outab(opcode);
+		outab(a1.a_value | 0xF8);
+		outraw(&a2);
 		break;
 	case TDMA:
 		if (cpu_model <= 4)
@@ -627,7 +637,7 @@ loop:
 				outab(opcode | 0x18);
 			else {
 				outab(opcode | 0x10);
-				outab((a2.a_type & TMREG) << 4 | (a1.a_type & TMREG));
+				outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
 			}
 			break;
 		case TBR:
@@ -655,7 +665,7 @@ loop:
 			if ((a2.a_type & TMMODE) != TWR)
 				aerr(WREGONLY);
 			outab(opcode | 0x10);
-			outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
+			outab((a2.a_type & TMREG) << 4 | (a1.a_type & TMREG));
 			break;
 		case TBR:
 			if ((a2.a_type & TMMODE) != TBR)

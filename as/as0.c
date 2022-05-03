@@ -32,7 +32,7 @@ int	cpu_flags = ARCH_CPUFLAGS;
 
 static void usage(void)
 {
-	fprintf(stderr, "as [-o object.o] source.s.\n");
+	fprintf(stderr, "as [-o object.o] [-l list] source.s.\n");
 	exit(1);
 }
 

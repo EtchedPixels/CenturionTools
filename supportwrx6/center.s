@@ -3,7 +3,7 @@
 		.export center0
 		.export center1
 		.export center2
-
+		.export center_va
 
 center2:
 	lda	2
@@ -20,8 +20,15 @@ center0:
 center:
 	lda	(x+)
 centern:
+	xfr	z,b
+	stb	(-s)
+	xfr	s,z
+	add	a,s
+	jmp	(x)
+
+center_va:
 	xfr	z,a
 	sta	(-s)
 	xfr	s,z
-	add	a,s
+	add	b,z
 	jmp	(x)

@@ -14,15 +14,16 @@ lsubeqysp:
 ;	In this form B is a pointer to the long
 ;
 lsubeq:
+	stx	(-s)
 	ldx	2(b)
-	sub	a,x
-	stx	2(b)
-	xfr	x,a		; Save low result
+	sub	x,a		; A = X -A
+	sta	2(b)
 	bnl	nocarry
 	inr	y
 nocarry:
 	ldx	(b)
-	sub	y,x
+	sub	x,y
+	xfr	y,x		; so we can save it
 	stx	(b)
-	xfr	x,y		; Save high result
+	ldx	(s+)
 	rsr

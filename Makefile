@@ -167,7 +167,6 @@ SUPPORT = \
 	supportwrx6/tosmodeax.o \
 	supportwrx6/tosshlax.o \
 	supportwrx6/tosshrax.o \
-	supportwrx6/tossubeax.o \
 	supportwrx6/tosudivax.o \
 	supportwrx6/tosudiveax.o \
 	supportwrx6/tosumodeax.o \

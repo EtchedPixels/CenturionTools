@@ -69,6 +69,8 @@ loop:		stb	(-s)
 		;
 		; R - D
 		;
+		; FIXME: sab is an rsub so we need to rework these
+		;
 		xfr	z,b
 		xfr	b,x
 		lda	DIVIS+2(s)
@@ -80,7 +82,6 @@ loop:		stb	(-s)
 		dcr	b
 noripple:
 		sab
-		; The flags are bass-ackward on the sub
 		; Want to subtract (R - D >= 0)
 		bl	skip
 		bz	skip

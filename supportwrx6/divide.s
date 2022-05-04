@@ -27,6 +27,8 @@ div16x16:
 	stx	(-s)
 	xfr	y,x
 	stx	(-s)
+	xfr	z,x
+	stx	(-s)
 
 	; Calculate A / B
 
@@ -39,8 +41,10 @@ loop:
 	sla
 	rlr	x
 	ina			; sets low bit of A
-	sub	b,x
-	; Carry logic is bass-ackwards for sub
+	; Ugly - optimise me
+	xfr	b,z
+	sub	x,z		; Z = X - B
+	xfr	z,x		; X = X - B
 	bnl	skip
 	bz	skip
 	add	b,x
@@ -48,4 +52,10 @@ loop:
 skip:
 	dcrb	yl
 	bnz	loop
+
+	ldx	(s+)
+	xfr	x,z
+	ldx	(s+)
+	xfr	y,z
+	ldx	(s+)
 	rsr

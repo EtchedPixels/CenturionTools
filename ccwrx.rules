@@ -3,13 +3,13 @@
 #
 	jmp %1
 %1:
-	=
+=
 %1:
 
 	jmp %2
 %1:
 %2:
-	=
+=
 %1:
 %2:
 
@@ -17,7 +17,28 @@
 %1:
 %2:
 %3:
-	=
+=
+%1:
+%2:
+%3:
+
+	bra %1
+%1:
+=
+%1:
+
+	bra %2
+%1:
+%2:
+=
+%1:
+%2:
+
+	bra %3
+%1:
+%2:
+%3:
+=
 %1:
 %2:
 %3:
@@ -30,16 +51,19 @@ _%1:
 	xfr z,x
 	stx (-s)
 	xfr s,z
-	;statement
 =
 _%1:
 	jsr center0
 
 _%1:
-	stx (-s)
-	xfr z,x
-	stx (-s)
-	xfr s,z
+	jsr center0
+	dcr s
+=
+_%1:
+	jsr center1
+
+_%1:
+	jsr center0
 	ldx -2
 	add x,s
 =
@@ -47,20 +71,7 @@ _%1:
 	jsr center2
 
 _%1:
-	stx (-s)
-	xfr z,x
-	stx (-s)
-	xfr s,z
-	dcr s
-=
-_%1:
-	jsr center1
-
-_%1:
-	stx (-s)
-	xfr z,x
-	stx (-s)
-	xfr s,z
+	jsr center0
 	ldx %2
 	add x,s
 =
@@ -68,27 +79,39 @@ _%1:
 	jsr center
 	.word %2
 
-_%1:
-	stx (-s)
-	xfr z,x
-	stx (-s)
-	xfr s,z
-	lda %2
+#
+#	Function exit
+#
+	ldx 3
+	add x,s
+	jmp cexit
 =
-_%1:
-	jsr center0
-	lda %2
+	jmp cexit3
 
-_%1:
-	stx (-s)
-	xfr z,x
-	stx (-s)
-	xfr s,z
-	cla
+	ldx 4
+	add x,s
+	jmp cexit
 =
-_%1:
-	jsr center0
-	cla
+	jmp cexit4
+
+	ldx 5
+	add x,s
+	jmp cexit
+=
+	jmp cexit5
+
+	ldx 6
+	add x,s
+	jmp cexit
+=
+	jmp cexit6
+
+	ldx %1
+	add x,s
+	jmp cexit
+=
+	ldx %1
+	jmp cexitn
 
 #
 #	Remove bool generation when flags will always be valid
@@ -112,6 +135,42 @@ _%1:
 	jn %1
 =
 	jz %1
+
+	cla
+	xfr a,a
+	jnz %1
+=
+	cla
+
+	cla
+	xfr a,a
+	jz %1
+=
+	cla
+	bra %1
+
+	lda %1
+	xfr a,a
+=
+	lda %1
+
+	cla
+	jz %1
+=
+	cla
+	bra %1
+
+	cla
+	jnz %1
+=
+	cla
+
+	cla
+	cla
+=
+	cla
+
+
 
 #
 #	Reloads - be careful of s+ etc.... Work across statement boundaries
@@ -248,6 +307,29 @@ _%1:
 	dca
 
 #
+#	Static inc/dec
+#
+	lda 1
+	ldb (_%1)
+	add b,a
+	sta (_%1)
+=
+	lda (_%1)
+	ina
+	sta (_%1)
+	dca
+
+	lda -1
+	ldb (_%1)
+	add b,a
+	sta (_%1)
+=
+	lda (_%1)
+	ina
+	sta (_%1)
+	dca
+
+#
 #	Adding FFFF is dca
 #
 	lda %1
@@ -262,3 +344,257 @@ _%1:
 =
 	dcr al
 
+#
+#	Linearise some compares
+#
+	lda %1
+	sta (-s)
+	lda %2
+	ldb (-s)
+	sab
+=
+	ldb %1
+	lda %2
+	sab
+
+#
+#	Linearise some pointer ops
+#
+#	16bit
+	lda %1
+	sta (-s)
+	lda %2
+	ldx (s+)
+	sta 0(x)
+=
+	ldx %1
+	lda %2
+	sta 0(x)
+
+#	8bit
+	lda %1
+	sta (-s)
+	ldab %2
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	ldab %2
+	stab 0(x)
+
+#	16bit to 8bit
+	lda %1
+	sta (-s)
+	lda %2
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	lda %2
+	stab 0(x)
+
+#	16bi clear
+	lda %1
+	sta (-s)
+	cla
+	ldx (s+)
+	sta 0(x)
+=
+	ldx %1
+	cla
+	sta 0(x)
+
+#	8bit clear
+	lda %1
+	sta (-s)
+	clab
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	clab
+	stab 0(x)
+
+#	16bit clear to 8bit
+	lda %1
+	sta (-s)
+	cla
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	cla
+	stab 0(x)
+
+#	16bit with add
+	lda %1
+	sta (-s)
+	lda %2
+	ldx (s+)
+	ldb %3
+	add b,x
+	sta 0(x)
+=
+	ldx %1
+	lda %2
+	ldb %3
+	add b,x
+	sta 0(x)
+
+#	8bit with add
+	lda %1
+	sta (-s)
+	ldab %2
+	ldx (s+)
+	ldb %3
+	add b,x
+	stab 0(x)
+=
+	ldx %1
+	ldab %2
+	ldb %3
+	add b,x
+	stab 0(x)
+
+#	16bit to 8bit add
+	lda %1
+	sta (-s)
+	lda %2
+	ldx (s+)
+	ldb %3
+	add b,x
+	stab 0(x)
+=
+	ldx %1
+	lda %2
+	ldb %3
+	add b,x
+	stab 0(x)
+
+#	16bit clear with add
+	lda %1
+	sta (-s)
+	cla
+	ldx (s+)
+	ldb %2
+	add b,x
+	sta 0(x)
+=
+	ldx %1
+	ldb %2
+	add b,x
+	cla
+	sta 0(x)
+
+#	8bit clear with add
+	lda %1
+	sta (-s)
+	clab
+	ldx (s+)
+	ldb %2
+	add b,x
+	stab 0(x)
+=
+	ldx %1
+	ldb %2
+	add b,x
+	clab
+	stab 0(x)
+
+#	16 to 8bit clear with add
+	lda %1
+	sta (-s)
+	cla
+	ldx (s+)
+	ldb %2
+	add b,x
+	stab 0(x)
+=
+	ldx %1
+	ldb %2
+	add b,x
+	cla
+	stab 0(x)
+
+#
+#	Cases we can elide the upper clear trivially
+#
+	clrb ah
+	ldbb %1
+	sabb
+	jsr bool%2
+=
+	ldbb %1
+	sabb
+	jsr bool%2
+
+#
+#	Remove save/load over statement boundary
+#
+	sta (_%1)
+	;statement
+	lda (_%1)
+=
+	sta (_%1)
+	;statement
+
+	sta %1(z)
+	;statement
+	lda %1(z)
+=
+	sta %1(z)
+	;statement
+
+	sta %1(x)
+	;statement
+	lda %1(x)
+=
+	sta %1(x)
+	;statement
+
+	sta %1(s)
+	;statement
+	lda %1(s)
+=
+	sta %1(s)
+	;statement
+
+#
+#	Dead conditionals
+#
+	cla
+	jz %1
+=
+	cla
+	bra %1
+
+#
+#	Function call parameter optimisation
+#
+	cla
+	sta (-s)
+	cla
+=
+	cla
+	sta (-s)
+
+#
+#	Constants
+#
+	lda 65535
+=
+	cla
+	dca
+
+	lda 1
+=
+	cla
+	ina
+
+	lda 0
+=
+	cla
+
+	ldb 0
+=
+	clr b

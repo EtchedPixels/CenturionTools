@@ -43,6 +43,20 @@
 %2:
 %3:
 
+	jnz %1
+	bra %2
+%1:
+=
+	jz %2
+%1:
+
+	jz %1
+	bra %2
+%1:
+=
+	jnz %2
+%1:
+
 #
 #	Function entry
 #
@@ -57,15 +71,21 @@ _%1:
 
 _%1:
 	jsr center0
+	add b,z
+=
+_%1:
+	jsr center_va
+
+_%1:
+	jsr center0
 	dcr s
 =
 _%1:
 	jsr center1
 
 _%1:
-	jsr center0
-	ldx -2
-	add x,s
+	jsr center1
+	dcr s
 =
 _%1:
 	jsr center2
@@ -165,10 +185,30 @@ _%1:
 =
 	cla
 
+	and b,a
+	xfr a,a
+=
+	and b,a
+
+	ori b,a
+	xfr a,a
+=
+	ori b,a
+
+	ore b,a
+	xfr a,a
+=
+	ore b,a
+
 	cla
 	cla
 =
 	cla
+
+	clrb ah
+	clrb ah
+=
+	clrb ah
 
 
 
@@ -345,7 +385,7 @@ _%1:
 	dcr al
 
 #
-#	Linearise some compares
+#	Linearise some compares and logic
 #
 	lda %1
 	sta (-s)
@@ -356,6 +396,60 @@ _%1:
 	ldb %1
 	lda %2
 	sab
+
+	sta (-s)
+	cla
+	ldab %1
+	ldb (s+)
+	and b,a
+=
+	clr b
+	ldbb %1
+	and b,a
+
+	sta (-s)
+	cla
+	ldab %1
+	ldb (s+)
+	ori b,a
+=
+	clr b
+	ldbb %1
+	ori b,a
+
+	sta (-s)
+	cla
+	ldab %1
+	ldb (s+)
+	ore b,a
+=
+	clr b
+	ldbb %1
+	ore b,a
+
+	sta (-s)
+	lda %1
+	ldb (s+)
+	and b,a
+=
+	ldb %1
+	and b,a
+
+	sta (-s)
+	lda %1
+	ldb (s+)
+	ori b,a
+=
+	ldb %1
+	ori b,a
+
+	sta (-s)
+	lda %1
+	ldb (s+)
+	ore b,a
+=
+	ldb %1
+	ore b,a
 
 #
 #	Linearise some pointer ops
@@ -516,6 +610,64 @@ _%1:
 	cla
 	stab 0(x)
 
+#	X variants
+	ldx %1
+	stx (-s)
+	cla
+	ldab %2
+	ldb (s+)
+	add b,a
+	ldab 0(a)
+	clrb ah
+=
+	ldx %1
+	cla
+	ldab %2
+	add x,a
+	ldab 0(a)
+	clrb ah
+
+	ldx %1
+	stx (-s)
+	lda %2
+	ldb (s+)
+	add b,a
+	lda 0(a)
+=
+	ldx %1
+	lda %2
+	add x,a
+	lda 0(a)
+
+	ldx %1
+	stx (-s)
+	cla
+	ldab %2
+	ldb (s+)
+	add b,a
+	lda 0(a)
+=
+	ldx %1
+	cla
+	ldab %2
+	add x,a
+	ldab 0(a)
+	clrb ah
+
+	ldx %1
+	stx (-s)
+	lda %2
+	ldb (s+)
+	add b,a
+	ldab 0(a)
+	clrb ah
+=
+	ldx %1
+	lda %2
+	add x,a
+	lda 0(a)
+	clrb ah
+
 #
 #	Cases we can elide the upper clear trivially
 #
@@ -598,3 +750,76 @@ _%1:
 	ldb 0
 =
 	clr b
+
+#
+#	Pointer chasing assignment
+#
+	lda (_%1)
+	sta (-s)
+	lda %2
+	lda %3(a)
+	ldx (s+)
+	sta %4(x)
+=
+	ldx (_%1)
+	lda %2
+	lda %3(a)
+	sta %4(x)
+
+	lda %1(z)
+	sta (-s)
+	lda %2
+	lda %3(a)
+	ldx (s+)
+	sta %4(x)
+=
+	ldx %1(z)
+	lda %2
+	lda %3(a)
+	sta %4(x)
+
+	lda %1(s)
+	sta (-s)
+	lda %2
+	lda %3(a)
+	ldx (s+)
+	sta %4(x)
+=
+	ldx %1(s)
+	lda %2
+	lda %3(a)
+	sta %4(x)
+
+#
+#	Long store
+#
+	lda %1
+	sta (-s)
+	lda %2
+	xfr a,y
+	lda %3
+	ldx (s+)
+	sta 2(x)
+	xfr y,b
+	stb (x)
+=
+	ldx %1
+	lda %2
+	xfr a,y
+	lda %3
+	sta 2(x)
+	xfr y,b
+	stb (x)
+
+#
+#	A --x case
+#
+	cla
+	ina
+	ldb %1
+	add b,a
+	sta %1
+=
+	lda %1
+	dca
+	sta %1

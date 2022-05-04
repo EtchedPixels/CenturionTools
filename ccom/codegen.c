@@ -176,13 +176,14 @@ static void AssignA(unsigned short value, int keepc)
 {
     /* Optimizations using clr. clr clears the C flag so we can't always
        use it */
-    if (!keepc) {
-        if (value == 0) {
+    if (value == 0) {
+        if (keepc == 0)
             AddCodeLine("cla");
-            return;
-        }
+        else
+            AddCodeLine("lda 0; noopt");
     }
-    AddCodeLine("lda %d", value);
+    else
+        AddCodeLine("lda %d", value);
 }
 
 /*
@@ -802,7 +803,7 @@ void g_getlocal (unsigned Flags, int Offs)
                 AddCodeLine ("ldab %d(%c)", Offs, r);
             } else {
                 AddCodeLine ("cla");
-                AddCodeLine ("ldab %d(%c) ", Offs, r);
+                AddCodeLine ("ldab %d(%c)", Offs, r);
                 if ((Flags & CF_UNSIGNED) == 0) {
                     unsigned L = GetLocalLabel();
                     AddCodeLine ("bp %s", LocalLabelName (L));
@@ -2024,15 +2025,23 @@ void g_cmp (unsigned flags, unsigned long val)
 
         case CF_CHAR:
             if (flags & CF_FORCECHAR) {
-                AddCodeLine ("ldbb %d", (unsigned char) val);
-                AddCodeLine ("sabb");
+                if ((val & 0xFF) == 0)
+                    AddCodeLine("xfrb al,al");
+                else {
+                    AddCodeLine ("ldbb %d", (unsigned char) val);
+                    AddCodeLine ("sabb");
+                }
                 break;
             }
             /* FALLTHROUGH */
 
         case CF_INT:
-            AddCodeLine ("ldb %d", (unsigned short) val);
-            AddCodeLine ("sab");
+            if (LO(val) == 0)
+                AddCodeLine ("xfr a,a");
+            else {
+                AddCodeLine ("ldb %d", (unsigned short) val);
+                AddCodeLine ("sab");
+            }
             break;
 
         case CF_LONG:
@@ -2719,11 +2728,11 @@ void g_or_ops (char *op, unsigned flags, unsigned long val)
             case CF_LONG:
                 /* TODO: FFFFxxxx xxxxFFFF cases for ori at least */
                 if (LO(val)) {
-                    AddCodeLine ("ldb %d", (unsigned short)val);
+                    AddCodeLine ("ldb %d", LO(val));
                     AddCodeLine ("%s b,a", op);
                 }
                 if (HI(val)) {
-                    AddCodeLine ("ldb %d", (unsigned short) (val >> 16));
+                    AddCodeLine ("ldb %d", HI(val));
                     AddCodeLine ("%s b,y", op);
                 }
                 return;
@@ -2751,14 +2760,14 @@ void g_or_ops (char *op, unsigned flags, unsigned long val)
             }
             /* Fall through */
         case CF_INT:
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine ("%s b,a", op);
             pop(flags);
             return;
         case CF_LONG:
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("%s b,y", op);
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("%s b,a", op);
             pop(flags);
             return;
@@ -2832,15 +2841,15 @@ void g_and (unsigned Flags, unsigned long Val)
             }
             /* Fall through */
         case CF_INT:
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("and b,a");
             pop(Flags);
             return;
 
         case CF_LONG:
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("and b,y");
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("and b,a");
             pop(Flags);
             return;
@@ -3284,16 +3293,16 @@ void g_eq (unsigned flags, unsigned long val)
             }
             /* Fall through */
         case CF_INT:
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("sab");
             AddCodeLine ("jsr booleq");
             pop(flags);
             return;
         case CF_LONG:
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("sab");
             AddCodeLine("xfr b,x");
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("sub y,b");
             AddCodeLine("ori x,b");
             AddCodeLine("jsr booleq");
@@ -3371,15 +3380,15 @@ void g_ne (unsigned flags, unsigned long val)
             }
             /* Fall through */
         case CF_INT:
-            AddCodeLine ("ldb (-s)");
+            AddCodeLine ("ldb (s+)");
             AddCodeLine ("sab");
             AddCodeLine ("jsr boolne");
             pop(flags);
             return;
         case CF_LONG:
             L = GetLocalLabel();
-            AddCodeLine("ldx (-s)");
-            AddCodeLine("ldb (-s)");
+            AddCodeLine("ldx (s+)");
+            AddCodeLine("ldb (s+)");
             AddCodeLine("sab");
             AddCodeLine("bnz %s", LocalLabelName(L));
             AddCodeLine("sub y,x");
@@ -3534,7 +3543,7 @@ void g_lt (unsigned flags, unsigned long val)
                     return;
                 }
             case CF_INT:
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sab");
                 if (flags & CF_UNSIGNED)
                     AddCodeLine ("jsr boolult");
@@ -3543,8 +3552,8 @@ void g_lt (unsigned flags, unsigned long val)
                 pop (flags);
                 return;
             case CF_LONG:
-                AddCodeLine("ldx (-s)");
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldx (s+)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sub y,x");
                 L = GetLocalLabel();
                 AddCodeLine("bnz %s", LocalLabelName(L));
@@ -3674,7 +3683,7 @@ void g_le (unsigned flags, unsigned long val)
                     return;
                 }
             case CF_INT:
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sab");
                 if (flags & CF_UNSIGNED)
                     AddCodeLine ("jsr boolule");
@@ -3684,8 +3693,8 @@ void g_le (unsigned flags, unsigned long val)
                 return;
             case CF_LONG:
                 L = GetLocalLabel();
-                AddCodeLine("ldx (-s)");
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldx (s+)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sub y,x");
                 AddCodeLine("bnz %s", LocalLabelName(L));
                 AddCodeLine("sab");
@@ -3830,7 +3839,7 @@ void g_gt (unsigned flags, unsigned long val)
                     return;
                 }
             case CF_INT:
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sab");
                 if (flags & CF_UNSIGNED)
                     AddCodeLine ("jsr boolugt");
@@ -3840,8 +3849,8 @@ void g_gt (unsigned flags, unsigned long val)
                 return;
             case CF_LONG:
                 L = GetLocalLabel();
-                AddCodeLine("ldx (-s)");
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldx (s+)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sub y,x");
                 AddCodeLine("bnz %s", LocalLabelName(L));
                 AddCodeLine("sab");
@@ -3896,7 +3905,7 @@ void g_ge (unsigned flags, unsigned long val)
 
                 case CF_INT:
                     /* Do a subtraction. Condition is true if carry clear */
-                    AddCodeLine("ldb %d", (unsigned char) val);
+                    AddCodeLine("ldb %d", LO(val));
                     AddCodeLine("sab");
                     AddCodeLine ("jsr booluge");
                     return;
@@ -3967,7 +3976,7 @@ void g_ge (unsigned flags, unsigned long val)
 
                 case CF_INT:
                     /* Do a subtraction */
-                    AddCodeLine("ldb %d", (unsigned short) val);
+                    AddCodeLine("ldb %d", LO(val));
                     AddCodeLine("sab");
                     if (flags & CF_UNSIGNED)
                         AddCodeLine ("jsr booluge");
@@ -4008,7 +4017,7 @@ void g_ge (unsigned flags, unsigned long val)
                     return;
                 }
             case CF_INT:
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sab");
                 if (flags & CF_UNSIGNED)
                     AddCodeLine ("jsr booluge");
@@ -4018,8 +4027,8 @@ void g_ge (unsigned flags, unsigned long val)
                 return;
             case CF_LONG:
                 L = GetLocalLabel();
-                AddCodeLine("ldx (-s)");
-                AddCodeLine("ldb (-s)");
+                AddCodeLine("ldx (s+)");
+                AddCodeLine("ldb (s+)");
                 AddCodeLine("sub y,x");
                 AddCodeLine("bnz %s", LocalLabelName(L));
                 AddCodeLine("sab");

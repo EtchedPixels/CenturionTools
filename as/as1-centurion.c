@@ -198,6 +198,7 @@ void address_encoding(uint8_t opbase, unsigned type, unsigned store, unsigned si
 			}
 			/* Fall through */
 		case 1:	/* Instructions with 3 mode bits - use the longer form */
+		case 2: /* Branches */
 			outab(opbase | 5);
 			if (offset) {
 				outab(((a2.a_type & TMREG) << 4) | 8);
@@ -563,7 +564,7 @@ loop:
 			else if (r2 == RB && r1 == RA)
 				outab(0x5D);
 			else if (r2 == RZ && r1 == RA)
-				outab(0x5D);
+				outab(0x5E);
 			else if (r2 == RS && r1 == RA)
 				outab(0x5F);
 			else {

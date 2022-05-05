@@ -139,20 +139,20 @@ _%1:
 	jsr booleq
 	jz %1
 =
-	jz %1
+	jnz %1
 
 	jsr boolne
-	jz %1
+	jnz %1
 =
 	jnz %1
 
 	jsr booleq
 	jnz %1
 =
-	jnz %1
+	jz %1
 
 	jsr boolne
-	jn %1
+	jz %1
 =
 	jz %1
 
@@ -357,7 +357,6 @@ _%1:
 	lda (_%1)
 	ina
 	sta (_%1)
-	dca
 
 	lda -1
 	ldb (_%1)
@@ -367,13 +366,12 @@ _%1:
 	lda (_%1)
 	ina
 	sta (_%1)
-	dca
 
 #
 #	Adding FFFF is dca
 #
 	lda %1
-	ld b, 0xFFFF
+	ld b, -1
 	add a,b
 =
 	lda %1
@@ -812,8 +810,18 @@ _%1:
 	stb (x)
 
 #
-#	A --x case
+#	--x and ++x quick case
 #
+	cla
+	dca
+	ldb %1
+	add b,a
+	sta %1
+=
+	lda %1
+	dca
+	sta %1
+
 	cla
 	ina
 	ldb %1
@@ -821,5 +829,5 @@ _%1:
 	sta %1
 =
 	lda %1
-	dca
+	ina
 	sta %1

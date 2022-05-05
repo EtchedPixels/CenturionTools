@@ -6,10 +6,11 @@
 		.export center_va
 
 center2:
-	lda	2
+	lda	-2
 	bra	centern
 center1:
-	lda	1
+	cla
+	dca	; -1
 	bra	centern
 center0:
 	cla

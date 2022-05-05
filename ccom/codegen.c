@@ -247,17 +247,22 @@ static void AddAConst(int value)
         AddCodeLine("xfr a,a");	/* Just set flags */
     /* Should probably use inr for 4 or less ? FIXME */
     else if (value == 1)
-        AddCodeLine("inr a");
-    else if (value == 2) {
-        AddCodeLine("inr a");
-        AddCodeLine("inr a");
+        AddCodeLine("ina");
+    else if (value == -1)
+        AddCodeLine("dca");
+    else if (value == -2) {
+        AddCodeLine("dca");
+        AddCodeLine("dca");
+    } else if (value == 2) {
+        AddCodeLine("ina");
+        AddCodeLine("ina");
     } else {
-        AddCodeLine("ld b, 0x%04X", LO(value));
+        AddCodeLine("ld b, %d", LO(value));
         AddCodeLine("add b,a");
     }
 }
 
-static void AddA(const char *where, unsigned int offset)
+static void AddA(const char *where, int offset)
 {
     if (offset == 0)
         AddCodeLine("ldb (%s)", where);
@@ -930,7 +935,6 @@ void g_leasp (unsigned Flags, int Offs)
 {
     /* FramePtr indicates a Varargs function where arguments are relative
        to fp */
-    AddCodeLine(";leasp %d %d\n", FramePtr, Offs);
     if (FramePtr && Offs > 0) {
         /* Because of the frame pointer */
         Offs += 4;
@@ -943,21 +947,20 @@ void g_leasp (unsigned Flags, int Offs)
         }
         return;
     }
-    Offs = -Offs;
-    /* Calculate the offset relative to sp */
-    Offs += StackPtr;
-
-    AddCodeLine(";+leasp %d %d\n", FramePtr, Offs);
+    /* We have to go via S in the frame pointer case so do that always */
+    if (Offs >= 0)
+        Offs += 4;
+    Offs -= StackPtr;
 
     if (!(Flags & CF_USINGX)) {
-        AddCodeLine("xfr z,a");
+        AddCodeLine("xfr s,a");
         if (Offs)
-            AddAConst(-Offs);
+            AddAConst(Offs);
         return;
     }
-    AddCodeLine("xfr z,x");
+    AddCodeLine("xfr s,x");
     if (Offs) {
-        AddCodeLine("ldb %d", -Offs);
+        AddCodeLine("ldb %d", Offs);
         AddCodeLine("add b,x");
     }
 }

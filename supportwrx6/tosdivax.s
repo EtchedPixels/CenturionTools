@@ -5,7 +5,7 @@
 ;	Dividend and remainder have the same sign
 ;	Quotient is negative if signs disagree
 ;
-;	Our helper does unsigned div/mod of A / B into X r B
+;	Our helper does unsigned div/mod of A / B into B r A
 ;
 ;
 ;	So we do the maths in unsigned then fix up
@@ -29,14 +29,14 @@ tosdivax:
 	inr	b		; change sign
 	inx			; remember sign
 plusmod:
-	lda	2(s)
+	lda	4(s)
 	bp	plusmod2
 	iva
 	ina
 	dcx			; track sign
 plusmod2:
 	jsr div16x16		; do the unsigned divide
-				; X = quotient, B remainder
+				; A = quotient, B remainder
 signfix:
 	ori	x,x
 	bz	sign_good
@@ -61,12 +61,12 @@ tosmodax:
 	inr	b		; change sign
 	inx			; remember sign
 plusdiv:
-	lda	2(s)
+	lda	4(s)
 	bp	plusdiv2
 	iva
 	ina
 plusdiv2:
 	jsr div16x16		; do the unsigned divide
-				; X = quotient, B remainder
+				; A = quotient, B remainder
 	xfr	b,a
 	bra	signfix

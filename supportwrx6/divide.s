@@ -1,7 +1,7 @@
 ;
 ;	This is the classic division algorithm
 ;
-;	On entry D holds the divisor and X holds the dividend
+;	On entry A holds the divisor and N holds the dividend
 ;
 ;	work = 0
 ;	loop for each bit in size (tracked in tmp)
@@ -15,7 +15,7 @@
 ;		end
 ;	end loop
 ;
-;	On exit A holds the quotient, B holds the remainder
+;	On exit B holds the quotient, A holds the remainder
 ;
 ;
 	.export div16x16
@@ -24,6 +24,8 @@
 	.code
 
 div16x16:
+	; Save the registers X-Z
+
 	stx	(-s)
 	xfr	y,x
 	stx	(-s)
@@ -38,21 +40,25 @@ div16x16:
 
 	clr	x		; working register
 loop:
-	sla
-	rlr	x
-	ina			; sets low bit of A
-	; Ugly - optimise me
+	sla			; shift dividend left
+	rlr	x		; rotate into work
+	; if work >= divisor
+	;		divisor -= work
 	xfr	b,z
-	sub	x,z		; Z = X - B
-	xfr	z,x		; X = X - B
+	sub	x,z		; Z = work - divisor
+	bz	doadd
 	bnl	skip
-	bz	skip
-	add	b,x
-	dca			; clear low bit of A
+doadd:
+	ina			; set low bit of A (we know it's 0 at this moment)
+	xfr	z,x		; result back into divisor
+	; work was < divisor so undo subtract
 skip:
 	dcrb	yl
 	bnz	loop
 
+	xfr	x,b
+
+	; Restore the registers X to Z
 	ldx	(s+)
 	xfr	x,z
 	ldx	(s+)

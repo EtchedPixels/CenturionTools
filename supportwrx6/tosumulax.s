@@ -3,6 +3,7 @@
 ;
 ;	We need to keep everything in registers
 ;
+;	TODO: rework register assignments for speed
 ;
 		.export tosmulax
 		.export tosumulax
@@ -18,17 +19,18 @@ tosumulax:
 
 		clr	y		; Work register
 		ldb	6(s)		; Going to do A * B
-		ldx	32		; counter
+		ldx	16		; counter
 		; Rotate through the number
 nextbit:
-		slr	a
+		slr	y
+		sla
 		bnl	noadd
 		add	b,y
-noadd:		slr	b
-		dcrb	xl
+noadd:		dcrb	xl
 		bnz	nextbit
-		; BA is now the result
 
+		; Y is now the result
+		xfr	y,a
 		ldx	(s+)
 		xfr	x,y
 		ldx	(s+)
@@ -36,7 +38,4 @@ noadd:		slr	b
 		inr	s
 		inr	s
 
-		; Result in BA, we don't use the upper half for anything
-		; yet but it might be a handy optimisation path for 32x16
-		; maths when it pops up
 		rsr

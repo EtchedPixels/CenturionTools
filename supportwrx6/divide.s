@@ -56,6 +56,6 @@ skip:
 	ldx	(s+)
 	xfr	x,z
 	ldx	(s+)
-	xfr	y,z
+	xfr	x,y
 	ldx	(s+)
 	rsr

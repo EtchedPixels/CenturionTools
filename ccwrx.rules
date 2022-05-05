@@ -210,6 +210,20 @@ _%1:
 =
 	clrb ah
 
+	sta %1
+	xfer a,a
+	jnz %2
+=
+	sta %1
+	jnz %2
+
+	sta %1
+	xfer a,a
+	jz %2
+=
+	sta %1
+	jz %2
+
 
 
 #
@@ -280,6 +294,21 @@ _%1:
 	lda %1(s)
 =
 	sta %1(s)
+
+	cla
+	sta %1
+	cla
+=
+	cla
+	sta %1
+
+	cla
+	stab %1
+	cla
+=
+	cla
+	stab %1
+
 
 #
 #	Clear up repeat clear high. This is safe as we might do ops on (a)
@@ -449,6 +478,35 @@ _%1:
 	ldb %1
 	ore b,a
 
+	lda %1
+	sta (-s)
+	lda %2
+	ldb (s+)
+	sub b,a
+=
+	ldb %1
+	lda %2
+	sub b,a
+
+	lda %1
+	sta (-s)
+	lda %2
+	ldb (s+)
+	sab
+=
+	ldb %1
+	lda %2
+	sab
+
+	cla
+	sta %1
+	;statement
+	cla
+=
+	cla
+	sta %1
+	;statement
+
 #
 #	Linearise some pointer ops
 #
@@ -485,7 +543,7 @@ _%1:
 	lda %2
 	stab 0(x)
 
-#	16bi clear
+#	16bit clear
 	lda %1
 	sta (-s)
 	cla
@@ -516,6 +574,84 @@ _%1:
 =
 	ldx %1
 	cla
+	stab 0(x)
+
+#	16bit to 1
+	lda %1
+	sta (-s)
+	cla
+	ina
+	ldx (s+)
+	sta 0(x)
+=
+	ldx %1
+	cla
+	ina
+	sta 0(x)
+
+#	8bit to 1
+	lda %1
+	sta (-s)
+	clab
+	inab
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	clab
+	inab
+	stab 0(x)
+
+#	16bit 1 to 8bit
+	lda %1
+	sta (-s)
+	cla
+	ina
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	cla
+	ina
+	stab 0(x)
+
+#	16bit to -1
+	lda %1
+	sta (-s)
+	cla
+	dca
+	ldx (s+)
+	sta 0(x)
+=
+	ldx %1
+	cla
+	dca
+	sta 0(x)
+
+#	8bit to -1
+	lda %1
+	sta (-s)
+	clab
+	dcab
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	clab
+	dcab
+	stab 0(x)
+
+#	16bit -1 to 8bit
+	lda %1
+	sta (-s)
+	cla
+	dca
+	ldx (s+)
+	stab 0(x)
+=
+	ldx %1
+	cla
+	dca
 	stab 0(x)
 
 #	16bit with add
@@ -665,6 +801,77 @@ _%1:
 	add x,a
 	lda 0(a)
 	clrb ah
+
+	ldx %1
+	stx (-s)
+	cla
+	ina
+	ldab %2
+	ldb (s+)
+	add b,a
+	lda 0(a)
+=
+	ldx %1
+	cla
+	ina
+	ldab %2
+	add x,a
+	ldab 0(a)
+	clrb ah
+
+	sta (-s)
+	ldx (s+)
+	ldb %1
+	add b,x
+	sta %2
+=
+	xax
+	ldb %1
+	add b,x
+	sta %2
+
+	sta (-s)
+	cla
+	ldx (s+)
+	ldb %1
+	add b,x
+	sta %2
+=
+	xax
+	cla
+	ldb %1
+	add b,x
+	sta %2
+
+	sta (-s)
+	cla
+	ina
+	ldx (s+)
+	ldb %1
+	add b,x
+	sta %2
+=
+	xax
+	cla
+	ina
+	ldb %1
+	add b,x
+	sta %2
+
+	sta (-s)
+	cla
+	dca
+	ldx (s+)
+	ldb %1
+	add b,x
+	sta %2
+=
+	xax
+	cla
+	dca
+	ldb %1
+	add b,x
+	sta %2
 
 #
 #	Cases we can elide the upper clear trivially

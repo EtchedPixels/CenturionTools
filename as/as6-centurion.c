@@ -184,6 +184,11 @@ SYM	sym[] = {
 	{	0,	"orib",		TREG2A8,	0x43	},
 	{	0,	"oreb",		TREG2A8,	0x44	},
 
+	/* Special 0x47: forms we know */
+
+	{	0,	"bcpy",		TBLOCK,		0x4740	},
+	{	0,	"bcmp",		TBLOCK,		0x4780	},
+
 	/* Move ("xfr") handled specially */
 	{	0,	"xfr",		TMOVE,		0x00	},
 	{	0,	"xfrb",		TMOVE,		0x00	},

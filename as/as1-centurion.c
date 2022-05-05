@@ -450,11 +450,14 @@ loop:
 			getaddr(&a2);
 			constify(&a2);
 			istuser(&a2);
-			if (a2.a_value < 1 || a2.a_value > 16)
+			/* Adjust value. Most ops are ,0 for once. clr however
+			   seems to be a straight load of 0-15 */
+			if (opcode != 0x22)
+				a2.a_value--;
+			if (a2.a_value < 0 || a2.a_value > 15)
 				aerr(RANGE);
-			/* Adjust value */
-			a2.a_value--;
 			disp = 1;
+			/* The EE200 doesn't have these extensions */
 			if (cpu_model <= 4)
 				aerr(BADCPU);
 		} else {
@@ -847,6 +850,27 @@ loop:
 				aerr(BRA_RANGE);
 			outab(disp);
 		}
+		break;
+	case TBLOCK:
+		if (cpu_model <= 4)
+			aerr(BADCPU);
+		/* The forms we know */
+		getaddr(&a1);
+		istuser(&a1);
+		c = a1.a_value;
+		if (c < 1 || c > 256)
+			aerr(RANGE);
+		comma();
+		getaddr(&a1);
+		istuser(&a1);
+		comma();
+		getaddr(&a2);
+		istuser(&a2);
+		outab(opcode >> 8);
+		outab(opcode);
+		outab(c - 1);
+		outraw(&a1);
+		outraw(&a2);
 		break;
 	default:
 		aerr(SYNTAX_ERROR);

@@ -1158,6 +1158,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define TSTOREX 0x2800
 #define	TSETCPU	0x2900			/* setcpu */
 #define TIMPL6	0x2A00			/* Not present on CPU4 */
+#define TBLOCK	0x2B00			/* Block operations CPU6 only */
 
 /*
  * Registers.

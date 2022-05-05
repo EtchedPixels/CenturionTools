@@ -7,10 +7,10 @@
 ;
 ;
 _memset:
-		lda	2(s)
+		lda	6(s)
 		xay
 		ldb	4(s)
-		lda	6(s)
+		lda	2(s)
 		jz	nowork
 
 setl:
@@ -18,5 +18,5 @@ setl:
 		dca
 		jnz	setl
 nowork:
-		lda	2(s)
+		lda	6(s)
 		rsr

@@ -578,7 +578,7 @@ loop:
 		case TBR:
 			if ((a1.a_type & TMMODE) != TBR)
 				aerr(BREGONLY);
-			if (r1 == RBL && r2 == RAL)
+			if (r1 == RAL && r2 == RBL)
 				outab(0x4D);
 			else {
 				outab(0x45);
@@ -665,8 +665,8 @@ loop:
 			aerr(REGONLY);
 		}
 		break;		
-	/* Two register ALU operations with no word short forms */
-	case TREG2ANWS:
+	/* Two register ALU operations with no short forms */
+	case TREG2ANS:
 		getaddr(&a1);
 		comma();
 		getaddr(&a2);
@@ -680,13 +680,8 @@ loop:
 		case TBR:
 			if ((a2.a_type & TMMODE) != TBR)
 				aerr(BREGONLY);
-			if ((a2.a_type & TMREG) == RBL &&
-				(a1.a_type & TMREG) == RAL)
-				outab(opcode | 0x08);
-			else {
-				outab(opcode);
-				outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
-			}
+			outab(opcode);
+			outab((a1.a_type & TMREG) << 4 | (a2.a_type & TMREG));
 			break;
 		default:
 			aerr(REGONLY);

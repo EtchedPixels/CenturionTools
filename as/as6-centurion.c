@@ -176,8 +176,8 @@ SYM	sym[] = {
 	{	0,	"sub",		TREG2A,		0x41	},
 	{	0,	"and",		TREG2A,		0x42	},
 	/* These forms have no short word version */
-	{	0,	"ori",		TREG2ANWS,	0x43	},
-	{	0,	"ore",		TREG2ANWS,	0x44	},
+	{	0,	"ori",		TREG2ANS,	0x43	},
+	{	0,	"ore",		TREG2ANS,	0x44	},
 
 	{	0,	"addb",		TREG2A8,	0x40	},
 	{	0,	"subb",		TREG2A8,	0x41	},

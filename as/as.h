@@ -1141,7 +1141,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define TDMA	0x1700			/* DMA word register */
 #define TDMAM	0x1800			/* DMA mode */
 #define TREG2A	0x1900			/* Two reg with B,A short forms */
-#define TREG2ANWS 0x1A00		/* But without the BX,AX word short */
+#define TREG2ANS 0x1A00			/* But without the short form */
 #define TJUMP	0x1B00			/* Jump/call */
 #define TLOAD	0x1C00			/* Load */
 #define TSTORE	0x1D00			/* Store */

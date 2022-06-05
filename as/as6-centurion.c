@@ -219,6 +219,10 @@ SYM	sym[] = {
 	{	0,	"jsr",		TJUMP,		0x78	},
 	{	0,	"syscall",	TIMPL6,		0x76	},
 	
+	/* 0x7E/7F	;	CPU6 push/pop range */
+	{	0,	"push",		TRANGE,		0x7E	},
+	{	0,	"pop",		TRANGE,		0x7F	},
+
 	/* 0x8x-0xFF	:	A and B load/store */
 
 	{	0,	"ld",		TLOAD,		0x00	},

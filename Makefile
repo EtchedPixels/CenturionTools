@@ -172,8 +172,8 @@ SUPPORT = \
 	supportwrx6/tosumodeax.o \
 	supportwrx6/tosumulax.o
 
-crt0.o: aswrx6 crt0.s
-	aswrx6 crt0.s
+crt0.o: as/aswrx6 crt0.s
+	as/aswrx6 crt0.s
 
 libc.a:	ccwrx6 $(STDIO) $(COBJ)
 	ar rc libc.a $(STDIO) $(COBJ) $(AOBJ)
@@ -185,7 +185,7 @@ libwrx6.a: ccwrx6 $(SUPPORT)
 	./ccwrx6 -Iinclude -c $^
 
 %.o: %.s
-	aswrx6 $^
+	as/aswrx6 $^
 
 clean:
 	(cd as; make clean)

@@ -77,7 +77,7 @@ SYM	sym[] = {
 	{	0,	"elo",		TIMPL,		0x0C	},
 	{	0,	"pcx",		TIMPL,		0x0D	},
 	{	0,	"dly",		TIMPL,		0x0E	},
-	{	0,	"sysret",	TIMPL6,		0x0F	},
+	{	0,	"rsys",		TIMPL6,		0x0F	},
 
 	/* 0x1X		:	Branches */
 #if 0
@@ -184,6 +184,8 @@ SYM	sym[] = {
 	{	0,	"andb",		TREG2A8,	0x42	},
 	{	0,	"orib",		TREG2A8,	0x43	},
 	{	0,	"oreb",		TREG2A8,	0x44	},
+
+	/* Special 0x46: this is bignums and not yet all decoded */
 
 	/* Special 0x47: forms we know */
 

@@ -98,6 +98,9 @@ SYM	sym[] = {
 	{	0,	"bs3",		TREL8,		0x1C	},
 	{	0,	"bs4",		TREL8,		0x1D	},
 	{	0,	"btm",		TREL8,		0x1E	},
+	/* CPU 4 this is used for the bitbanger teletype, CPU6 it is
+	   repurposed for checking the interrupt flag */
+	{	0,	"bie",		TREL8,		0x1E	},
 	{	0,	"bep",		TREL8,		0x1F	},
 	
 	/* Special magic forms : these will be smart one day */
@@ -122,7 +125,8 @@ SYM	sym[] = {
 	/* 0x2X		:	Mix of ALU and misc */
 	/* Short forms apply to AL, long forms any register */
 	/* 0x3x versions are word and apply to A, long to any register */
-	/* TODO: add inrb etc forms for specific 8bit */
+	/* On CPU6 the 16bit forms 3x have a second form allowing an
+	   address or index of register except A to be used */
 
 	{	0,	"inr",		TREGA,		0x20	},
 	{	0,	"dcr",		TREGA,		0x21	},
@@ -219,7 +223,7 @@ SYM	sym[] = {
 	/* 0x7X		:	Calls and other */
 	{	0,	"jmp",		TJUMP,		0x70	},
 	{	0,	"jsr",		TJUMP,		0x78	},
-	{	0,	"syscall",	TIMPL6,		0x76	},
+	{	0,	"jsys",		TIMPL6,		0x76	},
 	
 	/* 0x7E/7F	;	CPU6 push/pop range */
 	{	0,	"push",		TRANGE,		0x7E	},
@@ -241,6 +245,9 @@ SYM	sym[] = {
 	{	0,	"stb",		TSTOREEW,	0xF0	},
 	{	0,	"stbb",		TSTOREEB,	0xE0	},
 	{	0,	"stx",		TSTOREX,	0x68	},
+
+	/* Specials in the 80-FF rangee using X6 and X7 */
+	{	0,	"cpy",		TIMPL6,		0xF7	},
 };
 
         
@@ -295,6 +302,7 @@ char *etext[] = {
 	"Out of range",			/* 36 */
 	"A register only",		/* 37 */
 	"Not available on CPU4",	/* 38 */
+	"Cannot index via A",		/* 39 */
 };
 
 /*

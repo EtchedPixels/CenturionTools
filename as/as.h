@@ -1230,6 +1230,7 @@ typedef	uint16_t	VALUE;		/* For symbol values */
 #define RANGE		36
 #define AREGONLY	37
 #define BADCPU		38
+#define NOAIDX		39
 
 #else
 #error "Unknown target"
